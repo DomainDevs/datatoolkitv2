@@ -30,6 +30,7 @@ public class ScriptController : ControllerBase
         if (scriptSQL == null)
             return NotFound("No se encontró el script para el objeto especificado.");
 
-        return Ok(new { scriptSQL });
+        //return Ok(new { scriptSQL });
+        return Content(scriptSQL, "text/plain");
     }
 }
