@@ -1,4 +1,6 @@
-﻿namespace DataToolkit.Builder.Models
+﻿using System.Data.Common;
+
+namespace DataToolkit.Builder.Models
 {
     public class DbTable
     {

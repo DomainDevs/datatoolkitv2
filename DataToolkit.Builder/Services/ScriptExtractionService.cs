@@ -2,6 +2,7 @@
 using DataToolkit.Builder.Models;
 using DataToolkit.Library.Connections;
 using DataToolkit.Library.Sql;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.OpenApi.Expressions;
 using System.Collections.Generic;
 using System.Text;
@@ -20,6 +21,7 @@ public class ScriptExtractionService
     }
     */
     private readonly ISqlConnectionManager _connectionManager;
+
 
     public ScriptExtractionService(ISqlConnectionManager connectionManager)
     {
@@ -279,6 +281,55 @@ public class ScriptExtractionService
 
         return sb.ToString()+"GO";
     }
+
+    public async Task<DbTable?> ExtractTableMetadataAsync(string schema, string tableName)
+    {
+        if (!_connectionManager.IsConnected())
+            return null;
+
+        using var _sqlExecutor = new SqlExecutor(_connectionManager.GetConnection());
+
+        var columnsSql = @"
+        SELECT 
+            c.name AS ColumnName,
+            t.name AS DataType,
+            c.max_length AS MaxLength,
+            c.precision AS Precision,
+            c.scale AS Scale,
+            c.is_nullable AS IsNullable,
+            c.is_identity AS IsIdentity
+        FROM sys.columns c
+        INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+        INNER JOIN sys.tables tbl ON c.object_id = tbl.object_id
+        INNER JOIN sys.schemas s ON tbl.schema_id = s.schema_id
+        WHERE tbl.name = @tableName AND s.name = @schema
+        ORDER BY c.column_id;";
+
+        var columns = await _sqlExecutor.FromSqlAsync<ColumnDefinitionResult>(columnsSql, new { tableName, schema });
+
+        if (!columns.Any())
+            return null;
+
+        var dbTable = new DbTable
+        {
+            Schema = schema,
+            Name = tableName,
+            Columns = columns.Select(c => new DbColumn
+            {
+                Name = c.ColumnName,
+                SqlType = c.DataType,
+                Length = c.MaxLength == -1 ? null : (int?)c.MaxLength,
+                Precision = c.Precision,
+                Scale = c.Scale,
+                IsNullable = c.IsNullable,
+                IsIdentity = c.IsIdentity,
+                // ⚠️ Podrías poblar IsPrimaryKey más abajo si quieres
+            }).ToList()
+        };
+
+        return dbTable;
+    }
+
 
 }
 
