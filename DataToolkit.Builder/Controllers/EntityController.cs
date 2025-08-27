@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using DataToolkit.Builder.Services;
-using DataToolkit.Builder.Models;
-using DataToolkit.Library.Connections;
+﻿using DataToolkit.Builder.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -11,28 +8,45 @@ namespace DataToolkit.Builder.Controllers
     [Route("api/[controller]")]
     public class EntityController : ControllerBase
     {
-        private readonly ScriptExtractionService _scriptExtractionService;
+        private readonly ScriptExtractionService _scriptService;
         private readonly EntityGenerator _entityGenerator;
 
-        public EntityController(ScriptExtractionService scriptExtractionService, EntityGenerator entityGenerator)
+        public EntityController(ScriptExtractionService scriptService, EntityGenerator entityGenerator)
         {
-            _scriptExtractionService = scriptExtractionService;
+            _scriptService = scriptService;
             _entityGenerator = entityGenerator;
         }
 
-        // GET api/entity/table?tableName=Departamento&schema=dbo&ns=DataToolkit.SampleApi.Models
         [HttpGet("table")]
-        public async Task<IActionResult> GenerateTableEntity(
-            [FromQuery] string tableName,
-            [FromQuery] string schema = "dbo",
-            [FromQuery(Name = "ns")] string namespaceName = "DataToolkit.SampleApi.Models")
+        public async Task<IActionResult> GetTable([FromQuery] string schema, [FromQuery] string tableName)
         {
-            var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, tableName);
-            if (table is null)
+            if (string.IsNullOrWhiteSpace(schema) || string.IsNullOrWhiteSpace(tableName))
+                return BadRequest("Schema y TableName son requeridos.");
+
+            var table = await _scriptService.ExtractTableMetadataAsync(schema, tableName);
+
+            if (table == null)
                 return NotFound($"No se encontró metadata para {schema}.{tableName}");
 
-            var code = _entityGenerator.GenerateEntity(table, namespaceName);
-            return Ok(new { code });
+            // Devuelve la metadata en JSON
+            return Ok(table);
+        }
+
+        [HttpGet("generate")]
+        public async Task<IActionResult> GenerateEntity([FromQuery] string schema, [FromQuery] string tableName)
+        {
+            if (string.IsNullOrWhiteSpace(schema) || string.IsNullOrWhiteSpace(tableName))
+                return BadRequest("Schema y TableName son requeridos.");
+
+            var table = await _scriptService.ExtractTableMetadataAsync(schema, tableName);
+
+            if (table == null)
+                return NotFound($"No se encontró metadata para {schema}.{tableName}");
+
+            var entityCode = _entityGenerator.GenerateEntity(table);
+
+            // Devuelve el código C# como texto
+            return Ok(entityCode);
         }
     }
 }

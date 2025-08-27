@@ -1,57 +1,52 @@
-﻿using System.Text;
-using DataToolkit.Builder.Models;
-
+﻿using System;
+using System.Text;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using DataToolkit.Builder.Models;
 
 namespace DataToolkit.Builder.Services
 {
     public class EntityGenerator
     {
-        /// <summary>
-        /// Genera una clase C# con Data Annotations (Table/Key/Column/Identity/MaxLength) a partir de DbTable.
-        /// </summary>
-        public string GenerateEntity(DbTable table, string @namespace = "DataToolkit.SampleApi.Models")
+        public string GenerateEntity(DbTable table)
         {
             var sb = new StringBuilder();
 
-            // usings
+            sb.AppendLine("using System;");
             sb.AppendLine("using System.ComponentModel.DataAnnotations;");
             sb.AppendLine("using System.ComponentModel.DataAnnotations.Schema;");
             sb.AppendLine();
-            sb.AppendLine($"namespace {@namespace}");
+            sb.AppendLine("namespace DataToolkit.SampleApi.Models");
             sb.AppendLine("{");
 
-            // Nombre de clase en PascalCase seguro
-            var className = ToPascalCase(table.Name);
+            // Clase con atributo Table
             sb.AppendLine($"    [Table(\"{table.Name}\", Schema = \"{table.Schema}\")]");
-            sb.AppendLine($"    public class {className}");
+            sb.AppendLine($"    public class {table.Name}");
             sb.AppendLine("    {");
 
-            foreach (var col in table.Columns)
+            foreach (var column in table.Columns)
             {
-                // Key
-                if (col.IsPrimaryKey)
-                    sb.AppendLine("        [Key]");
+                // Comentario simple
+                sb.AppendLine($"        // {column.Name}");
 
-                // Identity
-                if (col.IsIdentity)
+                // PK Identity (ejemplo, puedes ajustar según tu lógica)
+                if (column.IsIdentity)
                     sb.AppendLine("        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
 
                 // Column
-                sb.AppendLine($"        [Column(\"{col.Name}\")]");
+                sb.AppendLine($"        [Column(\"{column.Name}\")]");
 
-                // MaxLength (strings)
-                if (IsStringType(col.SqlType) && col.Length.HasValue && col.Length.Value > 0)
-                {
-                    var len = NormalizeStringLength(col.SqlType, col.Length.Value);
-                    if (len > 0)
-                        sb.AppendLine($"        [MaxLength({len})]");
-                }
+                // MaxLength para strings
+                if (column.SqlType.Equals("nvarchar", StringComparison.OrdinalIgnoreCase) && column.Length.HasValue)
+                    sb.AppendLine($"        [MaxLength({column.Length.Value})]");
 
-                var clrType = MapSqlTypeToClr(col.SqlType, col.IsNullable);
-                var propName = ToPascalCase(col.Name);
-                sb.AppendLine($"        public {clrType} {propName} {{ get; set; }}");
+                // Tipo con nulabilidad
+                var clrType = MapSqlTypeToClr(column.SqlType);
+                if (!column.IsNullable && clrType != "string")
+                    sb.AppendLine($"        public {clrType} {column.Name} {{ get; set; }}");
+                else
+                    sb.AppendLine($"        public {clrType}? {column.Name} {{ get; set; }}");
+
                 sb.AppendLine();
             }
 
@@ -61,52 +56,23 @@ namespace DataToolkit.Builder.Services
             return sb.ToString();
         }
 
-        private static bool IsStringType(string sqlType)
+        private string MapSqlTypeToClr(string sqlType)
         {
-            var t = (sqlType ?? "").ToLowerInvariant();
-            return t == "varchar" || t == "nvarchar" || t == "char" || t == "nchar" || t == "text" || t == "ntext";
-        }
-
-        private static int NormalizeStringLength(string sqlType, int lengthFromDb)
-        {
-            var t = (sqlType ?? "").ToLowerInvariant();
-            if (t == "nvarchar" || t == "nchar")
-                return lengthFromDb > 0 ? lengthFromDb / 2 : lengthFromDb;
-            return lengthFromDb;
-        }
-
-        private static string MapSqlTypeToClr(string sqlType, bool isNullable)
-        {
-            var t = (sqlType ?? "").ToLowerInvariant();
-            string clr = t switch
+            return sqlType.ToLower() switch
             {
                 "int" => "int",
                 "bigint" => "long",
                 "smallint" => "short",
                 "tinyint" => "byte",
                 "bit" => "bool",
-                "decimal" or "numeric" or "money" or "smallmoney" => "decimal",
+                "decimal" or "numeric" => "decimal",
                 "float" => "double",
                 "real" => "float",
-                "date" or "datetime" or "smalldatetime" or "datetime2" or "datetimeoffset" => "DateTime",
-                "time" => "TimeSpan",
+                "date" or "datetime" or "smalldatetime" or "datetime2" => "DateTime",
+                "nvarchar" or "varchar" or "text" or "ntext" => "string",
                 "uniqueidentifier" => "Guid",
-                "binary" or "varbinary" or "image" => "byte[]",
-                "varchar" or "nvarchar" or "char" or "nchar" or "text" or "ntext" => "string",
                 _ => "string"
             };
-
-            if (clr != "string" && clr != "byte[]" && isNullable)
-                clr += "?";
-
-            return clr;
-        }
-
-        private static string ToPascalCase(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return name;
-            var parts = name.Split(new[] { '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            return string.Join("", parts.Select(p => char.ToUpperInvariant(p[0]) + (p.Length > 1 ? p.Substring(1).ToLowerInvariant() : "")));
         }
     }
 }

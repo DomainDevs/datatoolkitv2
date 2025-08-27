@@ -73,5 +73,3 @@ public static class EntityMetadataHelper
     public static bool IsNotMapped(PropertyInfo prop) =>
         prop.GetCustomAttribute<NotMappedAttribute>() != null;
 }
-
-
