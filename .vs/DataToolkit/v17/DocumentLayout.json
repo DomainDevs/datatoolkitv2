@@ -1,0 +1,173 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\entitygenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\entitygenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.library\\repositories\\genericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|solutionrelative:datatoolkit.library\\repositories\\genericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\models\\stores.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\models\\stores.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\scriptextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\scriptextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\scriptcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\scriptcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\entitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\entitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\models\\dbcolumn.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\models\\dbcolumn.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\models\\dbtable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\models\\dbtable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\repositorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\repositorycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GenericRepository.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "RelativeToolTip": "DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAAwEIAAABUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T18:00:06.082Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Stores.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\Stores.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Models\\Stores.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\Stores.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Models\\Stores.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAqwB8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T13:35:03.844Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ScriptController.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\ScriptController.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\ScriptController.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\ScriptController.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\ScriptController.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAawCQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T13:17:54.542Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ScriptExtractionService.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "ViewState": "AgIAAM8AAAAAAAAAAAAUwOcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T13:11:20.405Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DbColumn.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\DbColumn.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Models\\DbColumn.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\DbColumn.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Models\\DbColumn.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T12:58:45.295Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DbTable.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\DbTable.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Models\\DbTable.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\DbTable.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Models\\DbTable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T12:58:11.314Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EntityGenerator.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T12:54:17.324Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "EntityController.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\EntityController.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\EntityController.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\EntityController.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\EntityController.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAUwC4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-30T12:51:50.412Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "RepositoryController.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\RepositoryController.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\RepositoryController.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\RepositoryController.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\RepositoryController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-27T03:55:15.012Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
