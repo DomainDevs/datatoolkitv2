@@ -10,5 +10,12 @@
         public int? Length { get; set; }
         public int? Precision { get; set; }
         public int? Scale { get; set; }
+
+        // 👇 Nuevos campos importantes
+        public string? DefaultValue { get; set; }   // Soporte a DEFAULT
+        public bool IsComputed { get; set; }        // Soporte a columnas calculadas
+        public string? ComputedDefinition { get; set; } // Expresión si es calculada
+        public bool HasCheckConstraint { get; set; }    // Restricciones CHECK
+        public string? CheckDefinition { get; set; }
     }
 }

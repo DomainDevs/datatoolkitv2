@@ -290,20 +290,29 @@ public class ScriptExtractionService
         using var _sqlExecutor = new SqlExecutor(_connectionManager.GetConnection());
 
         var columnsSql = @"
-        SELECT 
-            c.name AS ColumnName,
-            t.name AS DataType,
-            c.max_length AS MaxLength,
-            c.precision AS Precision,
-            c.scale AS Scale,
-            c.is_nullable AS IsNullable,
-            c.is_identity AS IsIdentity
-        FROM sys.columns c
-        INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
-        INNER JOIN sys.tables tbl ON c.object_id = tbl.object_id
-        INNER JOIN sys.schemas s ON tbl.schema_id = s.schema_id
-        WHERE tbl.name = @tableName AND s.name = @schema
-        ORDER BY c.column_id;";
+    SELECT 
+        c.name AS ColumnName,
+        t.name AS DataType,
+        c.max_length AS MaxLength,
+        c.precision AS Precision,
+        c.scale AS Scale,
+        c.is_nullable AS IsNullable,
+        c.is_identity AS IsIdentity,
+        dc.definition AS DefaultValue,
+        c.is_computed AS IsComputed,
+        cc.definition AS ComputedDefinition,
+        chk.definition AS CheckDefinition
+    FROM sys.columns c
+    INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+    INNER JOIN sys.tables tbl ON c.object_id = tbl.object_id
+    INNER JOIN sys.schemas s ON tbl.schema_id = s.schema_id
+    LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
+    LEFT JOIN sys.computed_columns cc ON c.object_id = cc.object_id AND c.column_id = cc.column_id
+    LEFT JOIN sys.check_constraints chk 
+           ON chk.parent_object_id = c.object_id 
+          AND chk.parent_column_id = c.column_id
+    WHERE tbl.name = @tableName AND s.name = @schema
+    ORDER BY c.column_id;";
 
         var columns = await _sqlExecutor.FromSqlAsync<ColumnDefinitionResult>(columnsSql, new { tableName, schema });
 
@@ -323,7 +332,11 @@ public class ScriptExtractionService
                 Scale = c.Scale,
                 IsNullable = c.IsNullable,
                 IsIdentity = c.IsIdentity,
-                // ⚠️ Podrías poblar IsPrimaryKey más abajo si quieres
+                DefaultValue = c.DefaultValue,
+                IsComputed = c.IsComputed,
+                ComputedDefinition = c.ComputedDefinition,
+                HasCheckConstraint = !string.IsNullOrWhiteSpace(c.CheckDefinition),
+                CheckDefinition = c.CheckDefinition
             }).ToList()
         };
 
@@ -342,6 +355,12 @@ public class ColumnDefinitionResult
     public byte Scale { get; set; }
     public bool IsNullable { get; set; }
     public bool IsIdentity { get; set; }
+
+    // 👇 Nuevos campos
+    public string? DefaultValue { get; set; }
+    public bool IsComputed { get; set; }
+    public string? ComputedDefinition { get; set; }
+    public string? CheckDefinition { get; set; }
 }
 
 public class ColumnNameResult
