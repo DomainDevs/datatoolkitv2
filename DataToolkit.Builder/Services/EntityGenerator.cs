@@ -35,7 +35,11 @@ namespace DataToolkit.Builder.Services
                 sb.AppendLine($"        // {column.Name}");
 
                 if (column.IsIdentity)
+                {
+                    sb.AppendLine("        [Key]");
                     sb.AppendLine("        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
+                }
+
 
                 if (!column.IsNullable && !column.IsIdentity && clrType == "string")
                     sb.AppendLine("        [Required]");

@@ -41,6 +41,7 @@ builder.Services.AddDataToolkitWith(options =>
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<ScriptExtractionService>();
 builder.Services.AddScoped<EntityGenerator>(); // Registrar EntityGenerator
+builder.Services.AddScoped<DtoGeneratorService>();
 
 //Servicio conexión
 builder.Services.AddHttpContextAccessor(); //Para poder manejar cache, SqlConnectionManager depende de IHttpContextAccessor
