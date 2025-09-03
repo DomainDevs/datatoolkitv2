@@ -17,8 +17,8 @@ namespace DataToolkit.Builder.Controllers
             _entityGenerator = entityGenerator;
         }
 
-        [HttpGet("table")]
-        public async Task<IActionResult> GetTable([FromQuery] string schema, [FromQuery] string tableName)
+        [HttpGet("table_metadata")]
+        public async Task<IActionResult> GetTable([FromQuery] string schema = "dbo", [FromQuery] string tableName = "")
         {
             if (string.IsNullOrWhiteSpace(schema) || string.IsNullOrWhiteSpace(tableName))
                 return BadRequest("Schema y TableName son requeridos.");
@@ -33,7 +33,7 @@ namespace DataToolkit.Builder.Controllers
         }
 
         [HttpGet("generate")]
-        public async Task<IActionResult> GenerateEntity([FromQuery] string schema, [FromQuery] string tableName)
+        public async Task<IActionResult> GenerateEntity([FromQuery] string schema = "dbo", [FromQuery] string tableName = "")
         {
             if (string.IsNullOrWhiteSpace(schema) || string.IsNullOrWhiteSpace(tableName))
                 return BadRequest("Schema y TableName son requeridos.");

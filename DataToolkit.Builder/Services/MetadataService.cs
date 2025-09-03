@@ -29,14 +29,6 @@ public class MetadataService
     {
         var result = new DbGroupResult();
 
-        //if (!_connectionManager.IsConnected())
-        //    return BadRequest("Conexión no activa.");
-
-        //using var executor = new SqlExecutor(_connectionManager.GetConnection());
-        //var result = executor.FromSql<dynamic>("SELECT name FROM sys.databases");
-        //return Ok(result);
-
-
         if (provider == DatabaseProvider.SqlServer)
         {
             if (!_connectionManager.IsConnected())

@@ -12,14 +12,6 @@ namespace DataToolkit.Builder.Services;
 
 public class ScriptExtractionService
 {
-    /*
-    private readonly SqlExecutor _sqlExecutor;
-
-    public ScriptExtractionService(SqlExecutor sqlExecutor)
-    {
-        _sqlExecutor = sqlExecutor;
-    }
-    */
     private readonly ISqlConnectionManager _connectionManager;
 
 
@@ -148,11 +140,6 @@ public class ScriptExtractionService
         INNER JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
         INNER JOIN sys.columns c ON ic.object_id = c.object_id AND c.column_id = ic.column_id
         WHERE i.is_unique = 1 AND i.is_primary_key = 0 AND OBJECT_NAME(i.object_id) = @tableName;";
-
-        //List<ColumnDefinitionResult> columns = null;
-        //List<ColumnNameResult> primaryKeys = null;
-        //List<ForeignKeyResult> foreignKeys = null;
-        //List<ColumnNameResult> uniqueKeys = null;
 
         if (!_connectionManager.IsConnected())
             return null;
@@ -290,29 +277,44 @@ public class ScriptExtractionService
         using var _sqlExecutor = new SqlExecutor(_connectionManager.GetConnection());
 
         var columnsSql = @"
-    SELECT 
-        c.name AS ColumnName,
-        t.name AS DataType,
-        c.max_length AS MaxLength,
-        c.precision AS Precision,
-        c.scale AS Scale,
-        c.is_nullable AS IsNullable,
-        c.is_identity AS IsIdentity,
-        dc.definition AS DefaultValue,
-        c.is_computed AS IsComputed,
-        cc.definition AS ComputedDefinition,
-        chk.definition AS CheckDefinition
-    FROM sys.columns c
-    INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
-    INNER JOIN sys.tables tbl ON c.object_id = tbl.object_id
-    INNER JOIN sys.schemas s ON tbl.schema_id = s.schema_id
-    LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
-    LEFT JOIN sys.computed_columns cc ON c.object_id = cc.object_id AND c.column_id = cc.column_id
-    LEFT JOIN sys.check_constraints chk 
-           ON chk.parent_object_id = c.object_id 
-          AND chk.parent_column_id = c.column_id
-    WHERE tbl.name = @tableName AND s.name = @schema
-    ORDER BY c.column_id;";
+        SELECT 
+            c.name AS ColumnName,
+            t.name AS DataType,
+            c.max_length AS MaxLength,
+            c.precision AS Precision,
+            c.scale AS Scale,
+            c.is_nullable AS IsNullable,
+            c.is_identity AS IsIdentity,
+            dc.definition AS DefaultValue,
+            c.is_computed AS IsComputed,
+            cc.definition AS ComputedDefinition,
+            chk.definition AS CheckDefinition,
+            (CASE WHEN i.is_primary_key = 1 THEN 1 ELSE 0 END) AS IsPrimaryKey,
+            (SELECT COUNT(1) 
+            FROM sys.key_constraints kc1
+            INNER JOIN sys.index_columns ic1 
+            ON kc1.parent_object_id = ic1.object_id 
+            AND kc1.unique_index_id = ic1.index_id 
+            AND kc1.type = 'PK'
+            WHERE kc1.parent_object_id = c.object_id
+            ) AS PrimaryKeyCount
+        FROM sys.columns c
+        INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+        INNER JOIN sys.tables tbl ON c.object_id = tbl.object_id
+        INNER JOIN sys.schemas s ON tbl.schema_id = s.schema_id
+        LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
+        LEFT JOIN sys.computed_columns cc ON c.object_id = cc.object_id AND c.column_id = cc.column_id
+        LEFT JOIN sys.check_constraints chk 
+            ON chk.parent_object_id = c.object_id 
+            AND chk.parent_column_id = c.column_id
+        LEFT JOIN sys.index_columns ic
+            ON ic.object_id = c.object_id 
+            AND ic.column_id = c.column_id
+        LEFT JOIN sys.indexes i
+            ON i.object_id = ic.object_id 
+            AND i.index_id = ic.index_id
+        WHERE tbl.name = @tableName AND s.name = @schema
+        ORDER BY c.column_id;";
 
         var columns = await _sqlExecutor.FromSqlAsync<ColumnDefinitionResult>(columnsSql, new { tableName, schema });
 
@@ -336,9 +338,14 @@ public class ScriptExtractionService
                 IsComputed = c.IsComputed,
                 ComputedDefinition = c.ComputedDefinition,
                 HasCheckConstraint = !string.IsNullOrWhiteSpace(c.CheckDefinition),
-                CheckDefinition = c.CheckDefinition
+                CheckDefinition = c.CheckDefinition,
+                IsPrimaryKey = c.IsPrimaryKey == 1  // <--- aquí
             }).ToList()
         };
+
+
+        // 🚀 Aquí se asigna el PrimaryKeyCount a nivel tabla
+        dbTable.PrimaryKeyCount = dbTable.Columns.Count(c => c.IsPrimaryKey);
 
         return dbTable;
     }
@@ -361,6 +368,9 @@ public class ColumnDefinitionResult
     public bool IsComputed { get; set; }
     public string? ComputedDefinition { get; set; }
     public string? CheckDefinition { get; set; }
+
+    // 👇 Campo para la PK
+    public int IsPrimaryKey { get; set; }  // 1 = PK, 0 = no PK
 }
 
 public class ColumnNameResult

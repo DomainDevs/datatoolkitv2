@@ -31,5 +31,9 @@ namespace DataToolkit.Builder.Models
         /// Retorna las columnas que son clave primaria.
         /// </summary>
         public IEnumerable<DbColumn> PrimaryKeys => Columns.Where(c => c.IsPrimaryKey);
+
+        // 👇 Aquí sí corresponde
+        public int PrimaryKeyCount { get; set; }
+
     }
 }

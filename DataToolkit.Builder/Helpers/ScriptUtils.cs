@@ -58,15 +58,6 @@ public static class ScriptUtils
 
             """);
 
-        /*
-        if (objectType.Equals("P", StringComparison.OrdinalIgnoreCase))
-        {
-            sb
-              .AppendLine($"EXEC sp_procxmode {fullName}, 'anymode'")
-              .AppendLine("GO");
-        }
-        */
-
         return sb.ToString();
     }
 
