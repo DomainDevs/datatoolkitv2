@@ -343,13 +343,11 @@ public class ScriptExtractionService
             }).ToList()
         };
 
-
         // 🚀 Aquí se asigna el PrimaryKeyCount a nivel tabla
         dbTable.PrimaryKeyCount = dbTable.Columns.Count(c => c.IsPrimaryKey);
 
         return dbTable;
     }
-
 
 }
 

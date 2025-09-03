@@ -3,8 +3,20 @@
   "WorkspaceRootPath": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\entitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\entitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\entitygenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\entitygenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.library\\metadata\\entitymetadata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|solutionrelative:datatoolkit.library\\metadata\\entitymetadata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.library\\repositories\\genericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|solutionrelative:datatoolkit.library\\repositories\\genericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\scriptextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\scriptextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -19,14 +31,53 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "EntityController.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\EntityController.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\EntityController.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\EntityController.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\EntityController.cs",
-              "ViewState": "AgIAAAoAAAAAAAAAAAAAACMAAABUAAAAAAAAAA==",
+              "Title": "EntityGenerator.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Services\\EntityGenerator.cs",
+              "ViewState": "AgIAADgAAAAAAAAAAAAAwGYAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-03T00:58:26.934Z",
+              "WhenOpened": "2025-09-03T10:24:20.073Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "EntityMetadata.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Metadata\\EntityMetadata.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Library\\Metadata\\EntityMetadata.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Metadata\\EntityMetadata.cs",
+              "RelativeToolTip": "DataToolkit.Library\\Metadata\\EntityMetadata.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-03T10:24:07.168Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GenericRepository.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "RelativeToolTip": "DataToolkit.Library\\Repositories\\GenericRepository.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAAAAcAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-03T10:08:46.422Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ScriptExtractionService.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Services\\ScriptExtractionService.cs",
+              "ViewState": "AgIAABEAAAAAAAAAAAAAACkAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-03T01:06:40.575Z",
               "EditorCaption": ""
             }
           ]

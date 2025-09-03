@@ -28,6 +28,8 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"    public class {className}");
             sb.AppendLine("    {");
 
+            var pkColumns = new List<string>();
+
             foreach (var column in table.Columns)
             {
                 var propName = ToPascalCase(column.Name);
@@ -50,6 +52,7 @@ namespace DataToolkit.Builder.Services
                 // Si la columna es PK
                 if (column.IsPrimaryKey)
                 {
+                    pkColumns.Add($"{clrType} {propName}");
                     if (column.IsIdentity) ///Si identity fijo lleva Key
                     {
                         sb.AppendLine("        [Key]");
@@ -58,8 +61,8 @@ namespace DataToolkit.Builder.Services
                     else
                     {
                         //Si no es identity, debe validar si es llave primaria compuesta
-                        if(table.PrimaryKeyCount==1)
-                            sb.AppendLine("        [Key]");
+                        //if(table.PrimaryKeyCount==1)
+                        sb.AppendLine("        [Key]");
                     }
                 }
                 //Si es identity y no acepta nulo, por defecto es Required
@@ -91,29 +94,18 @@ namespace DataToolkit.Builder.Services
                 sb.AppendLine();
             }
 
+            // Cierra la clase
+            sb.AppendLine("        // Record anidado para PK");
+            if (pkColumns.Count > 0)
+            {
+                sb.AppendLine($"        public record Key({string.Join(", ", pkColumns)});");
+                sb.AppendLine();
+            }
+
             sb.AppendLine("    }");
             sb.AppendLine("}");
 
             return sb.ToString();
-        }
-
-        private string MapSqlTypeToClr(string sqlType)
-        {
-            return sqlType.ToLower() switch
-            {
-                "int" => "int",
-                "bigint" => "long",
-                "smallint" => "short",
-                "tinyint" => "byte",
-                "bit" => "bool",
-                "decimal" or "numeric" => "decimal",
-                "float" => "double",
-                "real" => "float",
-                "date" or "datetime" or "smalldatetime" or "datetime2" => "DateTime",
-                "nvarchar" or "varchar" or "text" or "ntext" => "string",
-                "uniqueidentifier" => "Guid",
-                _ => "string"
-            };
         }
 
         private bool IsStringType(string sqlType) =>

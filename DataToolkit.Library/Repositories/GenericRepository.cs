@@ -4,6 +4,8 @@ using System.Data;
 
 namespace DataToolkit.Library.Repositories;
 
+//Una empresa grande, debe evitae la “magia” y verbosidad manual; los diccionary son alternativa pero el repository generado debe ser muy bien definido.
+//tipo de clave fuerte por entidad es la solución
 public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where T : class
 {
     private readonly IDbConnection _connection;
