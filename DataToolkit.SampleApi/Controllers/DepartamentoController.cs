@@ -28,8 +28,12 @@ public class DepartamentoController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var key = new Dictionary<string, object> { { "Id", id } };
-        var depto = await _unitOfWork.GetRepository<Departamento>().GetByIdAsync(key);
+        var repo = _unitOfWork.GetRepository<Departamento>();
+
+        // Crear instancia con la llave primaria
+        var deptoKey = new Departamento { Id = id };
+        var depto = await repo.GetByIdAsync(deptoKey);
+
         return depto == null ? NotFound() : Ok(depto);
     }
 
@@ -40,7 +44,8 @@ public class DepartamentoController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await _unitOfWork.GetRepository<Departamento>().InsertAsync(departamento);
+        var repo = _unitOfWork.GetRepository<Departamento>();
+        await repo.InsertAsync(departamento);
         _unitOfWork.Commit();
 
         return CreatedAtAction(nameof(GetById), new { id = departamento.Id }, departamento);
@@ -53,7 +58,8 @@ public class DepartamentoController : ControllerBase
         if (departamento.Id != id)
             return BadRequest();
 
-        await _unitOfWork.GetRepository<Departamento>().UpdateAsync(departamento);
+        var repo = _unitOfWork.GetRepository<Departamento>();
+        await repo.UpdateAsync(departamento);
         _unitOfWork.Commit();
 
         return NoContent();
@@ -63,8 +69,11 @@ public class DepartamentoController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var key = new Dictionary<string, object> { { "Id", id } };
-        await _unitOfWork.GetRepository<Departamento>().DeleteAsync(key);
+        var repo = _unitOfWork.GetRepository<Departamento>();
+
+        // Crear instancia con la llave primaria
+        var deptoKey = new Departamento { Id = id };
+        await repo.DeleteAsync(deptoKey);
         _unitOfWork.Commit();
 
         return NoContent();

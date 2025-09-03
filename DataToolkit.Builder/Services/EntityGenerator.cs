@@ -28,7 +28,7 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"    public class {className}");
             sb.AppendLine("    {");
 
-            var pkColumns = new List<string>();
+            //var pkColumns = new List<string>();
 
             foreach (var column in table.Columns)
             {
@@ -52,7 +52,7 @@ namespace DataToolkit.Builder.Services
                 // Si la columna es PK
                 if (column.IsPrimaryKey)
                 {
-                    pkColumns.Add($"{clrType} {propName}");
+                    //pkColumns.Add($"{clrType} {propName}");
                     if (column.IsIdentity) ///Si identity fijo lleva Key
                     {
                         sb.AppendLine("        [Key]");
@@ -95,12 +95,13 @@ namespace DataToolkit.Builder.Services
             }
 
             // Cierra la clase
-            sb.AppendLine("        // Record anidado para PK");
+            /*
+             *sb.AppendLine("        // Record anidado para PK");
             if (pkColumns.Count > 0)
             {
                 sb.AppendLine($"        public record Key({string.Join(", ", pkColumns)});");
                 sb.AppendLine();
-            }
+            }*/
 
             sb.AppendLine("    }");
             sb.AppendLine("}");

@@ -55,8 +55,12 @@ public class EmpleadoController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var key = new Dictionary<string, object> { { "Id", id } };
-        var empleado = await _unitOfWork.GetRepository<Empleado>().GetByIdAsync(key);
+        var repo = _unitOfWork.GetRepository<Empleado>();
+
+        // Crear instancia con la llave primaria
+        var empleadoKey = new Empleado { Id = id };
+        var empleado = await repo.GetByIdAsync(empleadoKey);
+
         return empleado == null ? NotFound() : Ok(empleado);
     }
 
@@ -90,10 +94,14 @@ public class EmpleadoController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var key = new Dictionary<string, object> { { "Id", id } };
-        await _unitOfWork.GetRepository<Empleado>().DeleteAsync(key);
-        _unitOfWork.Commit();
+        var repo = _unitOfWork.GetRepository<Empleado>();
 
+        // Crear instancia con la llave primaria
+        var empleadoKey = new Empleado { Id = id };
+        await repo.DeleteAsync(empleadoKey);
+
+        _unitOfWork.Commit();
         return NoContent();
     }
+
 }

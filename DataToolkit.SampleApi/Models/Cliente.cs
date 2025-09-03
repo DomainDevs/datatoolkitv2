@@ -11,7 +11,7 @@ public class Cliente
     [Column("Id", Order = 0)]
     public int Id { get; set; }
 
-    [Column("Email", Order = 2)]
+    [Column("Nombre", Order = 2)]
     public string Nombre { get; set; }
 
     [Column("Email", Order = 1)]

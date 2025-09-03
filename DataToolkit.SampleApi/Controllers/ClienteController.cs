@@ -1,5 +1,4 @@
-﻿
-using DataToolkit.Library.UnitOfWorkLayer;
+﻿using DataToolkit.Library.UnitOfWorkLayer;
 using DataToolkit.SampleApi.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,7 +20,7 @@ public class ClienteController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var repo = _unitOfWork.GetRepository<Cliente>();
-        var clientes = await repo.GetAllAsync(); // ✔️ aquí sí lo esperas
+        var clientes = await repo.GetAllAsync();
         return Ok(clientes);
     }
 
@@ -29,15 +28,14 @@ public class ClienteController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var key = new Dictionary<string, object>
-    {
-        { "Id", id }
-    };
+        var repo = _unitOfWork.GetRepository<Cliente>();
 
-        var cliente = await _unitOfWork.GetRepository<Cliente>().GetByIdAsync(key);
+        // Llenar solo la llave primaria
+        var cliente = await repo.GetByIdAsync(new Cliente { Id = id });
 
         return cliente == null ? NotFound() : Ok(cliente);
     }
+
 
     // POST: /Cliente
     [HttpPost]
@@ -46,7 +44,8 @@ public class ClienteController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await _unitOfWork.GetRepository<Cliente>().InsertAsync(cliente);
+        var repo = _unitOfWork.GetRepository<Cliente>();
+        await repo.InsertAsync(cliente);
         _unitOfWork.Commit();
 
         return CreatedAtAction(nameof(GetById), new { id = cliente.Id }, cliente);
@@ -59,7 +58,8 @@ public class ClienteController : ControllerBase
         if (cliente.Id != id)
             return BadRequest();
 
-        await _unitOfWork.GetRepository<Cliente>().UpdateAsync(cliente);
+        var repo = _unitOfWork.GetRepository<Cliente>();
+        await repo.UpdateAsync(cliente);
         _unitOfWork.Commit();
 
         return NoContent();
@@ -69,12 +69,11 @@ public class ClienteController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(int id)
     {
-        var key = new Dictionary<string, object>
-            {
-                { "Id", id }
-            };
+        var repo = _unitOfWork.GetRepository<Cliente>();
 
-        await _unitOfWork.GetRepository<Cliente>().DeleteAsync(key);
+        // Crear una instancia de Cliente solo con la llave primaria
+        var clienteKey = new Cliente { Id = id };
+        await repo.DeleteAsync(clienteKey);
         _unitOfWork.Commit();
 
         return NoContent();

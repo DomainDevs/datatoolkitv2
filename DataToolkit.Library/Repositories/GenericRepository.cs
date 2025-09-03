@@ -4,8 +4,6 @@ using System.Data;
 
 namespace DataToolkit.Library.Repositories;
 
-//Una empresa grande, debe evitae la “magia” y verbosidad manual; los diccionary son alternativa pero el repository generado debe ser muy bien definido.
-//tipo de clave fuerte por entidad es la solución
 public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where T : class
 {
     private readonly IDbConnection _connection;
@@ -25,22 +23,19 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
         return await _connection.QueryAsync<T>(query, transaction: _transaction);
     }
 
-    public async Task<T?> GetByIdAsync(Dictionary<string, object> keys)
+    public async Task<T?> GetByIdAsync(T entity)
     {
-        var where = string.Join(" AND ", keys.Keys.Select(k =>
-        {
-            var prop = typeof(T).GetProperty(k);
-            return $"{EntityMetadataHelper.GetColumnName(prop!, typeof(T))} = @{k}";
-        }));
-
-        var query = $"SELECT * FROM {_meta.TableName} WHERE {where}";
-        return await _connection.QueryFirstOrDefaultAsync<T>(query, keys, _transaction);
+        // Solo se consideran las propiedades con [Key]
+        var keys = _meta.KeyProperties.ToDictionary(p => p.Name, p => p.GetValue(entity));
+        var whereClause = string.Join(" AND ", keys.Select(k => $"{_meta.ColumnMappings[_meta.Properties.First(p => p.Name == k.Key)]} = @{k.Key}"));
+        var query = $"SELECT * FROM {_meta.TableName} WHERE {whereClause}";
+        return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
     }
 
     public async Task<int> InsertAsync(T entity)
     {
         var props = _meta.Properties
-            .Where(p => !_meta.KeyProperties.Contains(p) || !_meta.IdentityProperties.Contains(p))
+            .Where(p => !_meta.IdentityProperties.Contains(p))
             .ToList();
 
         var columns = string.Join(", ", props.Select(p => _meta.ColumnMappings[p]));
@@ -53,7 +48,6 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
     public async Task<int> UpdateAsync(T entity)
     {
         var setProps = _meta.Properties.Except(_meta.KeyProperties).ToList();
-
         var setClause = string.Join(", ", setProps.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
         var whereClause = string.Join(" AND ", _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
 
@@ -61,16 +55,11 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
         return await _connection.ExecuteAsync(query, entity, _transaction);
     }
 
-    public async Task<int> DeleteAsync(Dictionary<string, object> keys)
+    public async Task<int> DeleteAsync(T entity)
     {
-        var where = string.Join(" AND ", keys.Keys.Select(k =>
-        {
-            var prop = typeof(T).GetProperty(k);
-            return $"{EntityMetadataHelper.GetColumnName(prop!, typeof(T))} = @{k}";
-        }));
-
-        var query = $"DELETE FROM {_meta.TableName} WHERE {where}";
-        return await _connection.ExecuteAsync(query, keys, _transaction);
+        var whereClause = string.Join(" AND ", _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
+        var query = $"DELETE FROM {_meta.TableName} WHERE {whereClause}";
+        return await _connection.ExecuteAsync(query, entity, _transaction);
     }
 
     public async Task<IEnumerable<T>> ExecuteStoredProcedureAsync(string storedProcedure, object parameters)
