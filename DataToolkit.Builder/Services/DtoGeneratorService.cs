@@ -18,7 +18,7 @@ namespace DataToolkit.Builder.Services
             _jsonMapping = jsonMapping ?? new Dictionary<string, string>();
         }
 
-        public string GenerateDto(DbTable table, string mode = "response")
+        public string GenerateDto(DbTable table, string mode = "request")
         {
             var sb = new StringBuilder();
             bool isRequest = mode.ToLower() == "request";
@@ -32,6 +32,10 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine();
             sb.AppendLine("namespace Application.DTOs");
             sb.AppendLine("{");
+
+            if (isRequest)
+                sb.AppendLine($"    [GenerateMapper(typeof(Domain.Entities.{ToPascalCase(table.Name)}))]");
+
             sb.AppendLine($"    public class {className}");
             sb.AppendLine("    {");
 

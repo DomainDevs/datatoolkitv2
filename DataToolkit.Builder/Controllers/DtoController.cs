@@ -22,7 +22,7 @@ namespace DataToolkit.Builder.Controllers
         [HttpGet("{tableName}")]
         public async Task<IActionResult> GenerateDto(
             string tableName,
-            string mode = "response",
+            string mode = "request",
             string schema = "dbo") // valor por defecto
         {
             // Extraer metadata
