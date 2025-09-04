@@ -25,7 +25,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         Sql = new SqlExecutor(_connection);
     }
 
-    public IRepository<T> GetRepository<T>() where T : class
+    public IGenericRepository<T> GetRepository<T>() where T : class
     {
         var type = typeof(T);
 
@@ -38,7 +38,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
             _repositories[type] = repo;
         }
 
-        return (IRepository<T>)_repositories[type];
+        return (IGenericRepository<T>)_repositories[type];
     }
 
     public void BeginTransaction()

@@ -44,6 +44,12 @@ namespace DataToolkit.Builder.Services
 
                 if (isRequest)
                 {
+                    if (column.IsPrimaryKey && column.IsIdentity)
+                    {
+                        sb.AppendLine("        //Identity");
+                        //sb.AppendLine();
+                        //continue;
+                    }
                     sb.AppendLine($"        [JsonPropertyName(\"{jsonName}\")]");
                 }
                 else

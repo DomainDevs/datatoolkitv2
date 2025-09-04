@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
 using System.Text;
+using System.Linq.Expressions;
 
 namespace DataToolkit.Builder.Controllers;
 
@@ -40,6 +41,7 @@ public class RepositoryController : ControllerBase
         sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine("using DataToolkit.Library.UnitOfWorkLayer;");
+        sb.AppendLine("using System.Linq.Expressions;");
         sb.AppendLine();
 
         // Namespace
@@ -50,7 +52,7 @@ public class RepositoryController : ControllerBase
         sb.AppendLine($"    public class {repositoryName}");
         sb.AppendLine("    {");
         sb.AppendLine("        private readonly IUnitOfWork _unitOfWork;");
-        sb.AppendLine($"        private IRepository<{request.EntityName}> Repo => _unitOfWork.GetRepository<{request.EntityName}>();");
+        sb.AppendLine($"        private IGenericRepository<{request.EntityName}> Repo => _unitOfWork.GetRepository<{request.EntityName}>();");
         sb.AppendLine();
         sb.AppendLine("        public bool AutoCommit { get; set; } = true;");
         sb.AppendLine();
@@ -80,10 +82,10 @@ public class RepositoryController : ControllerBase
         sb.AppendLine("        }");
         sb.AppendLine();
 
-        // UpdateAsync
-        sb.AppendLine($"        public async Task<int> UpdateAsync({request.EntityName} entity)");
+        // UpdateAsync con includeProperties opcional
+        sb.AppendLine($"        public async Task<int> UpdateAsync({request.EntityName} entity, Expression<Func<{request.EntityName}, object>>? includeProperties = null)");
         sb.AppendLine("        {");
-        sb.AppendLine("            var result = await Repo.UpdateAsync(entity);");
+        sb.AppendLine("            var result = await Repo.UpdateAsync(entity, includeProperties);");
         sb.AppendLine("            if (AutoCommit) _unitOfWork.Commit();");
         sb.AppendLine("            return result;");
         sb.AppendLine("        }");

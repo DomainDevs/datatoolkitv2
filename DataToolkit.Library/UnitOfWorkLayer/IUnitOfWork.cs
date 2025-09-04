@@ -2,16 +2,17 @@
 using DataToolkit.Library.Sql;
 using DataToolkit.Library.StoredProcedures;
 
-namespace DataToolkit.Library.UnitOfWorkLayer;
-
-public interface IUnitOfWork : IDisposable
+namespace DataToolkit.Library.UnitOfWorkLayer
 {
-    IRepository<T> GetRepository<T>() where T : class;
+    public interface IUnitOfWork
+    {
+        SqlExecutor Sql { get; }
+        IStoredProcedureExecutor StoredProcedureExecutor { get; }
 
-    void BeginTransaction();
-    void Commit();
-    void Rollback();
-
-    IStoredProcedureExecutor StoredProcedureExecutor { get; }
-    SqlExecutor Sql { get; } // ✅ NUEVO
+        void BeginTransaction();
+        void Commit();
+        void Dispose();
+        IGenericRepository<T> GetRepository<T>() where T : class;
+        void Rollback();
+    }
 }

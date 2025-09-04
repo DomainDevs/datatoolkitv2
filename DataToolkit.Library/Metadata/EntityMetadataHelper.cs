@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace DataToolkit.Library.Metadata;
@@ -53,6 +54,29 @@ public static class EntityMetadataHelper
                 ColumnMappings = columnMappings
             };
         });
+    }
+
+    public static IEnumerable<string> GetPropertiesFromExpression<T>(Expression<Func<T, object>> expression)
+    {
+        if (expression.Body is NewExpression newExpr)
+        {
+            // Ejemplo: c => new { c.Nombre, c.Email }
+            return newExpr.Members.Select(m => m.Name);
+        }
+
+        if (expression.Body is MemberExpression memberExpr)
+        {
+            // Ejemplo: c => c.Nombre
+            return new[] { memberExpr.Member.Name };
+        }
+
+        if (expression.Body is UnaryExpression unary && unary.Operand is MemberExpression innerMember)
+        {
+            // Ejemplo: c => (object)c.Nombre
+            return new[] { innerMember.Member.Name };
+        }
+
+        throw new ArgumentException("Expresión no soportada. Usa c => new { c.Prop1, c.Prop2 } o c => c.Prop");
     }
 
     public static string GetTableName<T>() where T : class =>

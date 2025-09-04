@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using DataToolkit.Library.Metadata;
 using System.Data;
+using System.Linq.Expressions;
 
 namespace DataToolkit.Library.Repositories;
 
@@ -25,12 +26,46 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
 
     public async Task<T?> GetByIdAsync(T entity)
     {
-        // Solo se consideran las propiedades con [Key]
-        var keys = _meta.KeyProperties.ToDictionary(p => p.Name, p => p.GetValue(entity));
-        var whereClause = string.Join(" AND ", keys.Select(k => $"{_meta.ColumnMappings[_meta.Properties.First(p => p.Name == k.Key)]} = @{k.Key}"));
+        var whereClause = string.Join(" AND ",
+            _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
+
         var query = $"SELECT * FROM {_meta.TableName} WHERE {whereClause}";
         return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
     }
+
+    public async Task<int> UpdateAsync(
+        T entity,
+        Expression<Func<T, object>>? includeProperties = null
+    )
+    {
+        var tableName = EntityMetadataHelper.GetTableName<T>();
+        var metadata = EntityMetadataHelper.GetMetadata<T>();
+        var keyName = metadata.KeyProperties.FirstOrDefault()?.Name;
+
+        if (string.IsNullOrEmpty(keyName))
+            throw new InvalidOperationException($"La entidad {typeof(T).Name} no tiene clave primaria definida.");
+
+        IEnumerable<string> properties;
+
+        if (includeProperties == null)
+        {
+            // ✅ Caso 1: actualizar todos los campos excepto las keys y las identity
+            properties = metadata.Properties
+                .Where(p => !metadata.KeyProperties.Contains(p) && !metadata.IdentityProperties.Contains(p))
+                .Select(p => p.Name);
+        }
+        else
+        {
+            // ✅ Caso 2: actualizar solo los campos pasados en la expresión
+            properties = EntityMetadataHelper.GetPropertiesFromExpression(includeProperties);
+        }
+
+        var setClauses = string.Join(", ", properties.Select(p => $"{p} = @{p}"));
+        var sql = $"UPDATE {tableName} SET {setClauses} WHERE {keyName} = @{keyName}";
+
+        return await _connection.ExecuteAsync(sql, entity);
+    }
+
 
     public async Task<int> InsertAsync(T entity)
     {
@@ -45,30 +80,25 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
         return await _connection.ExecuteAsync(query, entity, _transaction);
     }
 
-    public async Task<int> UpdateAsync(T entity)
-    {
-        var setProps = _meta.Properties.Except(_meta.KeyProperties).ToList();
-        var setClause = string.Join(", ", setProps.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
-        var whereClause = string.Join(" AND ", _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
-
-        var query = $"UPDATE {_meta.TableName} SET {setClause} WHERE {whereClause}";
-        return await _connection.ExecuteAsync(query, entity, _transaction);
-    }
 
     public async Task<int> DeleteAsync(T entity)
     {
-        var whereClause = string.Join(" AND ", _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
+        var whereClause = string.Join(" AND ",
+            _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
+
         var query = $"DELETE FROM {_meta.TableName} WHERE {whereClause}";
         return await _connection.ExecuteAsync(query, entity, _transaction);
     }
 
     public async Task<IEnumerable<T>> ExecuteStoredProcedureAsync(string storedProcedure, object parameters)
     {
-        return await _connection.QueryAsync<T>(storedProcedure, parameters, _transaction, commandType: CommandType.StoredProcedure);
+        return await _connection.QueryAsync<T>(
+            storedProcedure, parameters, _transaction, commandType: CommandType.StoredProcedure);
     }
 
     public async Task<IEnumerable<TResult>> ExecuteStoredProcedureAsync<TResult>(string storedProcedure, object parameters)
     {
-        return await _connection.QueryAsync<TResult>(storedProcedure, parameters, _transaction, commandType: CommandType.StoredProcedure);
+        return await _connection.QueryAsync<TResult>(
+            storedProcedure, parameters, _transaction, commandType: CommandType.StoredProcedure);
     }
 }
