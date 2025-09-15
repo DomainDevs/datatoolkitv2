@@ -14,5 +14,7 @@ namespace DataToolkit.Library.UnitOfWorkLayer
         void Dispose();
         IGenericRepository<T> GetRepository<T>() where T : class;
         void Rollback();
+        Task CommitAsync();
+        Task RollbackAsync();
     }
 }

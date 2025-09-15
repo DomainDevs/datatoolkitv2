@@ -1,46 +1,76 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
-
-namespace DataToolkit.Builder.Services;
+﻿using System.Text.RegularExpressions;
+using System.Text;
 
 public static class MapperGenerator
 {
-    public static string Generate(string entityContent, string dtoContent)
+    public static string Generate(string entityContent, string dtoContent, bool useMapperly)
     {
-        // Extraer el nombre de la clase Entity
         var entityName = ExtractClassName(entityContent);
-        // Extraer el nombre de la clase DTO
         var dtoName = ExtractClassName(dtoContent);
 
-        // Extraer propiedades de cada archivo
+        if (useMapperly)
+            return GenerateMapperly(entityName, dtoName);
+
+        return GenerateManual(entityContent, dtoContent, entityName, dtoName);
+    }
+
+    private static string GenerateManual(string entityContent, string dtoContent, string entityName, string dtoName)
+    {
         var entityProps = ExtractProperties(entityContent);
         var dtoProps = ExtractProperties(dtoContent);
 
         var sb = new StringBuilder();
+        sb.AppendLine($"//handwritten mapping (mapping manual es lo más rápido y liviano)");
         sb.AppendLine($"public static class {entityName}Mapper");
         sb.AppendLine("{");
 
-        // Mapper DTO → Entity
+        // DTO → Entity
         sb.AppendLine($"    public static {entityName} ToEntity(this {dtoName} dto)");
         sb.AppendLine("    {");
         sb.AppendLine($"        var entity = new {entityName}();");
         foreach (var prop in dtoProps)
         {
             if (entityProps.ContainsKey(prop.Key))
-                sb.AppendLine($"        entity.{prop.Key} = dto.{prop.Key};");
+            {
+                var entityType = entityProps[prop.Key];
+                var dtoType = prop.Value;
+
+                if (entityType == dtoType)
+                {
+                    // mismo tipo → asignación directa
+                    sb.AppendLine($"        entity.{prop.Key} = dto.{prop.Key};");
+                }
+                else
+                {
+                    // tipos distintos → intentar llamar mapper auxiliar
+                    sb.AppendLine($"        entity.{prop.Key} = dto.{prop.Key}?.ToEntity();");
+                }
+            }
         }
         sb.AppendLine("        return entity;");
         sb.AppendLine("    }");
         sb.AppendLine();
 
-        // Mapper Entity → DTO
+        // Entity → DTO
         sb.AppendLine($"    public static {dtoName} ToDto(this {entityName} entity)");
         sb.AppendLine("    {");
         sb.AppendLine($"        var dto = new {dtoName}();");
         foreach (var prop in entityProps)
         {
             if (dtoProps.ContainsKey(prop.Key))
-                sb.AppendLine($"        dto.{prop.Key} = entity.{prop.Key};");
+            {
+                var entityType = prop.Value;
+                var dtoType = dtoProps[prop.Key];
+
+                if (entityType == dtoType)
+                {
+                    sb.AppendLine($"        dto.{prop.Key} = entity.{prop.Key};");
+                }
+                else
+                {
+                    sb.AppendLine($"        dto.{prop.Key} = entity.{prop.Key}?.ToDto();");
+                }
+            }
         }
         sb.AppendLine("        return dto;");
         sb.AppendLine("    }");
@@ -48,6 +78,38 @@ public static class MapperGenerator
         sb.AppendLine("}");
         return sb.ToString();
     }
+
+
+    private static string GenerateMapperly(string entityName, string dtoName)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("// =========================================================");
+        sb.AppendLine("// Este mapper fue generado automáticamente por DataToolkit.");
+        sb.AppendLine("// Usa Riok.Mapperly para generar las implementaciones en build.");
+        sb.AppendLine("// =========================================================");
+        sb.AppendLine();
+        sb.AppendLine("using Application.DTOs;");
+        sb.AppendLine("using Domain.Entities;");
+        sb.AppendLine("using Riok.Mapperly.Abstractions;");
+        sb.AppendLine();
+        sb.AppendLine("namespace Application.Mappers;");
+        sb.AppendLine();
+        sb.AppendLine("[Mapper]");
+        sb.AppendLine($"public static partial class {entityName}Mapper");
+        sb.AppendLine("{");
+        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine($"    /// Convierte un {dtoName} (DTO) en {entityName} (Entidad de Dominio).");
+        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine($"    public static partial {entityName} ToEntity({dtoName} dto);");
+        sb.AppendLine();
+        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine($"    /// Convierte un {entityName} (Entidad de Dominio) en {dtoName} (DTO).");
+        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine($"    public static partial {dtoName} ToDto({entityName} entity);");
+        sb.AppendLine("}");
+        return sb.ToString();
+    }
+
 
     private static string ExtractClassName(string content)
     {

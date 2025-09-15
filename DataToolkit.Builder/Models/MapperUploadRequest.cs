@@ -7,4 +7,7 @@ public class MapperUploadRequest
 
     // Archivo del DTO
     public IFormFile DtoFile { get; set; } = default!;
+
+    // Nuevo flag, usar mapperly
+    public bool UseMapperly { get; set; }
 }

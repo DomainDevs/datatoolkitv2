@@ -67,6 +67,20 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         Sql = new SqlExecutor(_connection);
     }
 
+    // 🔒 Método CommitAsync Asincrono
+    public Task CommitAsync()
+    {
+        Commit();
+        return Task.CompletedTask;
+    }
+
+    // 🔒 Método RollbackAsync Asincrono
+    public Task RollbackAsync()
+    {
+        Rollback();
+        return Task.CompletedTask;
+    }
+
     // 🔒 Método Dispose público
     public void Dispose()
     {

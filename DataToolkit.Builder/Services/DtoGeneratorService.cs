@@ -33,8 +33,8 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("namespace Application.DTOs");
             sb.AppendLine("{");
 
-            if (isRequest)
-                sb.AppendLine($"    [GenerateMapper(typeof(Domain.Entities.{ToPascalCase(table.Name)}))]");
+            //if (isRequest)
+            //    sb.AppendLine($"    [GenerateMapper(typeof(Domain.Entities.{ToPascalCase(table.Name)}))]");
 
             sb.AppendLine($"    public class {className}");
             sb.AppendLine("    {");

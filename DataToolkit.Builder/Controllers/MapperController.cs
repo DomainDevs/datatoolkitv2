@@ -26,23 +26,7 @@ public class MapperController : ControllerBase
             dtoContent = await reader.ReadToEndAsync();
 
         // Generar el mapper
-        var mapperCode = MapperGenerator.Generate(entityContent, dtoContent);
-
-        return Content(mapperCode, "text/plain");
-    }
-
-    // Método 2: usar archivos desde una ruta local
-    [HttpPost("local")]
-    public IActionResult FromLocalFiles([FromQuery] string entityPath, [FromQuery] string dtoPath)
-    {
-        if (!System.IO.File.Exists(entityPath) || !System.IO.File.Exists(dtoPath))
-            return BadRequest("Uno de los archivos no existe.");
-
-        var entityContent = System.IO.File.ReadAllText(entityPath);
-        var dtoContent = System.IO.File.ReadAllText(dtoPath);
-
-        // Generar el mapper
-        var mapperCode = MapperGenerator.Generate(entityContent, dtoContent);
+        var mapperCode = MapperGenerator.Generate(entityContent, dtoContent, request.UseMapperly);
 
         return Content(mapperCode, "text/plain");
     }
