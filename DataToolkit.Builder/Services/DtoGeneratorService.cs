@@ -27,14 +27,13 @@ namespace DataToolkit.Builder.Services
 
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Text.Json.Serialization;");
+
             if (isRequest)
                 sb.AppendLine("using System.ComponentModel.DataAnnotations;");
+
             sb.AppendLine();
             sb.AppendLine("namespace Application.DTOs");
             sb.AppendLine("{");
-
-            //if (isRequest)
-            //    sb.AppendLine($"    [GenerateMapper(typeof(Domain.Entities.{ToPascalCase(table.Name)}))]");
 
             sb.AppendLine($"    public class {className}");
             sb.AppendLine("    {");

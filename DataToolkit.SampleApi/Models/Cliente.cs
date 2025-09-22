@@ -14,6 +14,9 @@ public class Cliente
     [Column("Nombre", Order = 2)]
     public string Nombre { get; set; }
 
-    [Column("Email", Order = 1)]
+    [Column("Apellido", Order = 3)]
+    public string Apellido { get; set; }
+
+    [Column("Email", Order = 4)]
     public string Email { get; set; }
 }

@@ -1,11 +1,12 @@
 ﻿using Dapper;
 using DataToolkit.Library.Metadata;
+using DataToolkit.Library.ChangeTracking;
 using System.Data;
 using System.Linq.Expressions;
 
 namespace DataToolkit.Library.Repositories;
 
-public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where T : class
+public class GenericRepository<T> : IGenericRepository<T> where T : class
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction? _transaction;
@@ -33,39 +34,37 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
         return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
     }
 
-    public async Task<int> UpdateAsync(
-        T entity,
-        Expression<Func<T, object>>? includeProperties = null
-    )
+    public async Task<int> UpdateAsync(T entity, params Expression<Func<T, object>>[] includeProperties)
     {
-        var tableName = EntityMetadataHelper.GetTableName<T>();
-        var metadata = EntityMetadataHelper.GetMetadata<T>();
-        var keyName = metadata.KeyProperties.FirstOrDefault()?.Name;
+        if (includeProperties == null || includeProperties.Length == 0)
+            throw new ArgumentException("Debe especificar al menos una propiedad a actualizar.");
 
-        if (string.IsNullOrEmpty(keyName))
+        var metadata = EntityMetadataHelper.GetMetadata<T>();
+        var keyProps = metadata.KeyProperties;
+
+        if (!keyProps.Any())
             throw new InvalidOperationException($"La entidad {typeof(T).Name} no tiene clave primaria definida.");
 
-        IEnumerable<string> properties;
+        var propertiesToUpdate = includeProperties
+            .SelectMany(p => EntityMetadataHelper.GetPropertiesFromExpression(p))
+            .ToList();
 
-        if (includeProperties == null)
+        if (!propertiesToUpdate.Any())
+            return 0;
+
+        var setClauses = string.Join(", ", propertiesToUpdate.Select(propName =>
         {
-            // ✅ Caso 1: actualizar todos los campos excepto las keys y las identity
-            properties = metadata.Properties
-                .Where(p => !metadata.KeyProperties.Contains(p) && !metadata.IdentityProperties.Contains(p))
-                .Select(p => p.Name);
-        }
-        else
-        {
-            // ✅ Caso 2: actualizar solo los campos pasados en la expresión
-            properties = EntityMetadataHelper.GetPropertiesFromExpression(includeProperties);
-        }
+            var propMeta = metadata.Properties.Single(p => p.Name == propName);
+            return $"{metadata.ColumnMappings[propMeta]} = @{propName}";
+        }));
 
-        var setClauses = string.Join(", ", properties.Select(p => $"{p} = @{p}"));
-        var sql = $"UPDATE {tableName} SET {setClauses} WHERE {keyName} = @{keyName}";
+        var whereClause = string.Join(" AND ",
+            keyProps.Select(k => $"{metadata.ColumnMappings[k]} = @{k.Name}"));
 
-        return await _connection.ExecuteAsync(sql, entity);
+        var sql = $"UPDATE {metadata.TableName} SET {setClauses} WHERE {whereClause}";
+
+        return await _connection.ExecuteAsync(sql, entity, _transaction);
     }
-
 
     public async Task<int> InsertAsync(T entity)
     {
@@ -80,14 +79,15 @@ public class GenericRepository<T> : IRepository<T>, IGenericRepository<T> where 
         return await _connection.ExecuteAsync(query, entity, _transaction);
     }
 
-
     public async Task<int> DeleteAsync(T entity)
     {
         var whereClause = string.Join(" AND ",
             _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
 
         var query = $"DELETE FROM {_meta.TableName} WHERE {whereClause}";
-        return await _connection.ExecuteAsync(query, entity, _transaction);
+
+        // PASO CORRECTO: el objeto entity como parámetros
+        return await _connection.ExecuteAsync(query, entity, transaction: _transaction);
     }
 
     public async Task<IEnumerable<T>> ExecuteStoredProcedureAsync(string storedProcedure, object parameters)

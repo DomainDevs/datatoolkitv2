@@ -1,6 +1,8 @@
-﻿using DataToolkit.Library.UnitOfWorkLayer;
+﻿using Azure.Core;
+using DataToolkit.Library.UnitOfWorkLayer;
 using DataToolkit.SampleApi.Models;
 using Microsoft.AspNetCore.Mvc;
+using static Dapper.SqlMapper;
 
 namespace DataToolkit.SampleApi.Controllers;
 
@@ -53,16 +55,40 @@ public class ClienteController : ControllerBase
 
     // PUT: /Cliente/{id}
     [HttpPut("{id}")]
-    public async Task<ActionResult> Put(int id, [FromBody] Cliente cliente)
+    public async Task<ActionResult> Put(int id, [FromBody] Cliente request)
     {
-        if (cliente.Id != id)
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (request.Id != id)
             return BadRequest();
 
+        var cliente = new Cliente
+        {
+            Id = request.Id,
+            Nombre = request.Nombre,
+            Apellido = request.Apellido
+        };
+
+        var repo = _unitOfWork.GetRepository<Cliente>();
+        await repo.UpdateAsync(cliente, c => c.Nombre, c => c.Apellido);
+        _unitOfWork.Commit();
+        return NoContent();
+
+        /*
         var repo = _unitOfWork.GetRepository<Cliente>();
         await repo.UpdateAsync(cliente);
         _unitOfWork.Commit();
 
         return NoContent();
+
+        var allProps = _meta.Properties.Select(p => p.Name).ToArray();
+        return UpdateAsync(entity, allProps);
+        */
+
+
+        // Actualizar solo el Nombre y apellido
+        //return await _clienteRepository.UpdateAsync(cliente, c => c.Nombre, c => c.Apellido);
     }
 
     // DELETE: /Cliente/{id}

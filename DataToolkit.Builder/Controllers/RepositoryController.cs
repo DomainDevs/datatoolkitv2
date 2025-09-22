@@ -38,9 +38,8 @@ public class RepositoryController : ControllerBase
         // Usings
         sb.AppendLine("using DataToolkit.Library.Repositories;");
         sb.AppendLine($"using {entityNamespace};");
-        sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using System.Threading.Tasks;");
-        sb.AppendLine("using DataToolkit.Library.UnitOfWorkLayer;");
+        sb.AppendLine("using Domain.Interfaces;");
+        sb.AppendLine("using System.Data;");
         sb.AppendLine("using System.Linq.Expressions;");
         sb.AppendLine();
 
@@ -49,57 +48,25 @@ public class RepositoryController : ControllerBase
         sb.AppendLine("{");
 
         // Clase
-        sb.AppendLine($"    public class {repositoryName}");
+        sb.AppendLine($"    public class {repositoryName} : I{request.EntityName}Repository");
         sb.AppendLine("    {");
-        sb.AppendLine("        private readonly IUnitOfWork _unitOfWork;");
-        sb.AppendLine($"        private IGenericRepository<{request.EntityName}> Repo => _unitOfWork.GetRepository<{request.EntityName}>();");
+        sb.AppendLine($"        private readonly GenericRepository<{request.EntityName}> _repo;");
         sb.AppendLine();
-        sb.AppendLine("        public bool AutoCommit { get; set; } = true;");
-        sb.AppendLine();
-        sb.AppendLine($"        public {repositoryName}(IUnitOfWork unitOfWork)");
+        sb.AppendLine($"        public {repositoryName}(IDbConnection connection)");
         sb.AppendLine("        {");
-        sb.AppendLine("            _unitOfWork = unitOfWork;");
+        sb.AppendLine($"            _repo = new GenericRepository<{request.EntityName}>(connection);");
         sb.AppendLine("        }");
         sb.AppendLine();
-
-        // GetAllAsync
-        sb.AppendLine($"        public Task<IEnumerable<{request.EntityName}>> GetAllAsync() => Repo.GetAllAsync();");
+        sb.AppendLine($"        public Task<int> InsertAsync({request.EntityName} entity) => _repo.InsertAsync(entity);");
         sb.AppendLine();
-
-        // GetByIdAsync
-        sb.AppendLine($"        public Task<{request.EntityName}?> GetByIdAsync({request.EntityName} entity)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            return Repo.GetByIdAsync(entity);");
-        sb.AppendLine("        }");
+        sb.AppendLine($"        public Task<int> UpdateAsync({request.EntityName} entity, params Expression<Func<{request.EntityName}, object>>[] includeProperties)");
+        sb.AppendLine("            => _repo.UpdateAsync(entity, includeProperties);");
         sb.AppendLine();
-
-        // InsertAsync
-        sb.AppendLine($"        public async Task<int> InsertAsync({request.EntityName} entity)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            var result = await Repo.InsertAsync(entity);");
-        sb.AppendLine("            if (AutoCommit) _unitOfWork.Commit();");
-        sb.AppendLine("            return result;");
-        sb.AppendLine("        }");
+        sb.AppendLine($"        public Task<int> DeleteAsync({request.EntityName} entity) => _repo.DeleteAsync(entity);");
         sb.AppendLine();
-
-        // UpdateAsync con includeProperties opcional
-        sb.AppendLine($"        public async Task<int> UpdateAsync({request.EntityName} entity, Expression<Func<{request.EntityName}, object>>? includeProperties = null)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            var result = await Repo.UpdateAsync(entity, includeProperties);");
-        sb.AppendLine("            if (AutoCommit) _unitOfWork.Commit();");
-        sb.AppendLine("            return result;");
-        sb.AppendLine("        }");
+        sb.AppendLine($"        public Task<{request.EntityName}?> GetByIdAsync({request.EntityName} entity) => _repo.GetByIdAsync(entity);");
         sb.AppendLine();
-
-        // DeleteAsync
-        sb.AppendLine($"        public async Task<int> DeleteAsync({request.EntityName} entity)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            var result = await Repo.DeleteAsync(entity);");
-        sb.AppendLine("            if (AutoCommit) _unitOfWork.Commit();");
-        sb.AppendLine("            return result;");
-        sb.AppendLine("        }");
-
-        // Cierre clase y namespace
+        sb.AppendLine($"        public Task<IEnumerable<{request.EntityName}>> GetAllAsync() => _repo.GetAllAsync();");
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
