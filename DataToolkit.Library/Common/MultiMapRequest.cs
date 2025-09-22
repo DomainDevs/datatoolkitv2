@@ -10,9 +10,9 @@ namespace DataToolkit.Library.Common;
 /// </summary>
 public class MultiMapRequest
 {
-    public string Sql { get; set; }
-    public object Parameters { get; set; }
+    public string? Sql { get; set; } = null;
+    public object? Parameters { get; set; } = null;
     public string SplitOn { get; set; } = "Id";
-    public Type[] Types { get; set; }
+    public Type[]? Types { get; set; } = null;
     public Func<object[], object> MapFunction { get; set; }
 }

@@ -3,24 +3,8 @@
   "WorkspaceRootPath": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\mappergenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\mappergenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\mappercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\mappercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\models\\mapperuploadrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\models\\mapperuploadrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\dtocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\dtocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\dtogeneratorservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\dtogeneratorservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.library\\sql\\sqlexecutor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{87285450-44E2-4F0F-930B-FF4A90A07E81}|DataToolkit.Library\\DataToolkit.Library.csproj|solutionrelative:datatoolkit.library\\sql\\sqlexecutor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,68 +14,20 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "MapperUploadRequest.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\MapperUploadRequest.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Models\\MapperUploadRequest.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\MapperUploadRequest.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Models\\MapperUploadRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAgAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T10:47:03.505Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "DtoController.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\DtoController.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\DtoController.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\DtoController.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\DtoController.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAB4AAABJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-04T20:23:46.98Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "DtoGeneratorService.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\DtoGeneratorService.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\DtoGeneratorService.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\DtoGeneratorService.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Services\\DtoGeneratorService.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAACMAAAAOAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-04T19:46:03.902Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "MapperGenerator.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\MapperGenerator.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\MapperGenerator.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\MapperGenerator.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Services\\MapperGenerator.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAAFAAAAAAAAAAAAAAAA==",
+              "Title": "SqlExecutor.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Sql\\SqlExecutor.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Library\\Sql\\SqlExecutor.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Library\\Sql\\SqlExecutor.cs",
+              "RelativeToolTip": "DataToolkit.Library\\Sql\\SqlExecutor.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-04T14:30:14.219Z",
+              "WhenOpened": "2025-09-20T15:28:09.487Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "MapperController.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\MapperController.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\MapperController.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\MapperController.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\MapperController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAuAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-04T14:27:01.376Z"
             }
           ]
         }

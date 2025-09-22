@@ -85,9 +85,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
             _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
 
         var query = $"DELETE FROM {_meta.TableName} WHERE {whereClause}";
-
-        // PASO CORRECTO: el objeto entity como parámetros
-        return await _connection.ExecuteAsync(query, entity, transaction: _transaction);
+        return await _connection.ExecuteAsync(query, entity, _transaction); // ✅ ahora sí
     }
 
     public async Task<IEnumerable<T>> ExecuteStoredProcedureAsync(string storedProcedure, object parameters)
