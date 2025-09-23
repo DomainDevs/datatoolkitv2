@@ -1,0 +1,137 @@
+﻿using DataToolkit.Builder.Models;
+using DataToolkit.Builder.Services;
+using DataToolkit.Builder.Helpers;
+using Microsoft.AspNetCore.Mvc;
+using System.Text;
+using System.Linq;
+using System.Globalization;
+
+namespace DataToolkit.Builder.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class CQRSGeneratorController : ControllerBase
+{
+    private readonly ScriptExtractionService _scriptExtractionService;
+
+    public CQRSGeneratorController(ScriptExtractionService scriptExtractionService)
+    {
+        _scriptExtractionService = scriptExtractionService;
+    }
+
+    // ===========================
+    // CREATE
+    // ===========================
+    [HttpPost("create")]
+    public async Task<IActionResult> GenerateCreate([FromBody] CQRSRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TableName))
+            return BadRequest("Se requiere el nombre de la tabla (TableName).");
+
+        var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
+        var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
+        if (table == null)
+            return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
+
+        var code = CQRSGenerator.GenerateCreateCode(table);
+        return Content(code, "text/plain");
+    }
+
+    // ===========================
+    // UPDATE
+    // ===========================
+    [HttpPost("update")]
+    public async Task<IActionResult> GenerateUpdate([FromBody] CQRSRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TableName))
+            return BadRequest("Se requiere el nombre de la tabla (TableName).");
+
+        var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
+        var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
+        if (table == null)
+            return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
+
+        var code = CQRSGenerator.GenerateUpdateCode(table);
+        return Content(code, "text/plain");
+    }
+
+    // ===========================
+    // DELETE
+    // ===========================
+    [HttpPost("delete")]
+    public async Task<IActionResult> GenerateDelete([FromBody] CQRSRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TableName))
+            return BadRequest("Se requiere el nombre de la tabla (TableName).");
+
+        var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
+        var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
+        if (table == null)
+            return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
+
+        var code = CQRSGenerator.GenerateDeleteCode(table);
+        return Content(code, "text/plain");
+    }
+
+    // ===========================
+    // QUERY (GetById)
+    // ===========================
+    [HttpPost("query")]
+    public async Task<IActionResult> GenerateQuery([FromBody] CQRSRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TableName))
+            return BadRequest("Se requiere el nombre de la tabla (TableName).");
+
+        var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
+        var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
+        if (table == null)
+            return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
+
+        var code = CQRSGenerator.GenerateQueryCode(table);
+        return Content(code, "text/plain");
+    }
+
+    // ===========================
+    // QUERYALL (GetAll)
+    // ===========================
+    [HttpPost("queryall")]
+    public async Task<IActionResult> GenerateQueryAll([FromBody] CQRSRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TableName))
+            return BadRequest("Se requiere el nombre de la tabla (TableName).");
+
+        var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
+        var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
+        if (table == null)
+            return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
+
+        var code = CQRSGenerator.GenerateQueryAllCode(table);
+        return Content(code, "text/plain");
+    }
+
+    // -------------------------
+    // Helpers para conversión de nombres
+    // -------------------------
+    private static string ToPascalCase(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name;
+        var parts = name.Split(new[] { '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < parts.Length; i++)
+            parts[i] = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(parts[i].ToLower());
+        return string.Join("", parts);
+    }
+
+    private static string ToCamelCase(string pascal)
+    {
+        if (string.IsNullOrEmpty(pascal)) return pascal;
+        if (pascal.Length == 1) return pascal.ToLower();
+        return char.ToLowerInvariant(pascal[0]) + pascal.Substring(1);
+    }
+}
+
+// Clase para recibir la petición
+public class CQRSRequest
+{
+    public string TableName { get; set; } = string.Empty;
+    public string Schema { get; set; } = "dbo";
+}

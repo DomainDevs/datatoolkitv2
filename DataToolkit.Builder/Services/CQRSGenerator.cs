@@ -1,0 +1,251 @@
+﻿using DataToolkit.Builder.Models;
+using System.Text;
+using System.Linq;
+using DataToolkit.Builder.Helpers;
+
+namespace DataToolkit.Builder.Services
+{
+    public static class CQRSGenerator
+    {
+        public static string GenerateCreateCode(DbTable table)
+        {
+            var entityName = ToPascalCase(table.Name);
+            var commandName = $"Create{entityName}Command";
+            var handlerName = $"Create{entityName}Handler";
+            var responseDto = $"{entityName}ResponseDto";
+
+            var sb = new StringBuilder();
+
+            // -------------------------
+            // Command
+            // -------------------------
+            sb.AppendLine($"// {commandName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"namespace Application.Features.{entityName}.Commands.Create;");
+            sb.AppendLine();
+            sb.Append($"public record {commandName}(");
+            sb.Append(string.Join(", ", table.Columns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
+            sb.AppendLine(") : IRequest<int>;");
+            sb.AppendLine();
+
+            // -------------------------
+            // Handler
+            // -------------------------
+            sb.AppendLine($"// {handlerName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Domain.Interfaces;");
+            sb.AppendLine($"using Application.Features.{entityName}.Mappers;");
+            sb.AppendLine($"using Entities = Domain.Entities;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Commands.Create;");
+            sb.AppendLine();
+            sb.AppendLine($"public class {handlerName} : IRequestHandler<{commandName}, int>");
+            sb.AppendLine("{");
+            sb.AppendLine($"    private readonly I{entityName}Repository _repo;");
+            sb.AppendLine($"    public {handlerName}(I{entityName}Repository repo) => _repo = repo;");
+            sb.AppendLine();
+            sb.AppendLine($"    public async Task<int> Handle({commandName} request, CancellationToken ct)");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var entity = {entityName}Mapper.ToEntity(request);");
+            sb.AppendLine("        return await _repo.InsertAsync(entity);");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        public static string GenerateUpdateCode(DbTable table)
+        {
+            var entityName = ToPascalCase(table.Name);
+            var commandName = $"Update{entityName}Command";
+            var handlerName = $"Update{entityName}Handler";
+            var responseDto = $"{entityName}ResponseDto";
+
+            var sb = new StringBuilder();
+
+            // -------------------------
+            // Command
+            // -------------------------
+            sb.AppendLine($"// {commandName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"namespace Application.Features.{entityName}.Commands.Update;");
+            sb.AppendLine();
+            sb.Append($"public record {commandName}(");
+            sb.Append(string.Join(", ", table.Columns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
+            sb.AppendLine(") : IRequest<int>;");
+            sb.AppendLine();
+
+            // -------------------------
+            // Handler
+            // -------------------------
+            sb.AppendLine($"// {handlerName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Domain.Interfaces;");
+            sb.AppendLine($"using Application.Features.{entityName}.Mappers;");
+            sb.AppendLine($"using Entities = Domain.Entities;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Commands.Update;");
+            sb.AppendLine();
+            sb.AppendLine($"public class {handlerName} : IRequestHandler<{commandName}, int>");
+            sb.AppendLine("{");
+            sb.AppendLine($"    private readonly I{entityName}Repository _repo;");
+            sb.AppendLine($"    public {handlerName}(I{entityName}Repository repo) => _repo = repo;");
+            sb.AppendLine();
+            sb.AppendLine($"    public async Task<int> Handle({commandName} request, CancellationToken ct)");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var entity = {entityName}Mapper.ToEntity(request);");
+            sb.AppendLine("        return await _repo.UpdateAsync(entity);");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        public static string GenerateDeleteCode(DbTable table)
+        {
+            var entityName = ToPascalCase(table.Name);
+            var commandName = $"Delete{entityName}Command";
+            var handlerName = $"Delete{entityName}Handler";
+            var pkColumn = table.Columns.FirstOrDefault(c => c.IsPrimaryKey);
+
+            var sb = new StringBuilder();
+
+            // -------------------------
+            // Command
+            // -------------------------
+            sb.AppendLine($"// {commandName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"namespace Application.Features.{entityName}.Commands.Delete;");
+            sb.AppendLine();
+            sb.AppendLine($"public record {commandName}({MapClrType(pkColumn)} {ToPascalCase(pkColumn.Name)}) : IRequest<bool>;");
+            sb.AppendLine();
+
+            // -------------------------
+            // Handler
+            // -------------------------
+            sb.AppendLine($"// {handlerName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Domain.Interfaces;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Commands.Delete;");
+            sb.AppendLine();
+            sb.AppendLine($"public class {handlerName} : IRequestHandler<{commandName}, bool>");
+            sb.AppendLine("{");
+            sb.AppendLine($"    private readonly I{entityName}Repository _repo;");
+            sb.AppendLine($"    public {handlerName}(I{entityName}Repository repo) => _repo = repo;");
+            sb.AppendLine();
+            sb.AppendLine($"    public async Task<bool> Handle({commandName} request, CancellationToken cancellationToken)");
+            sb.AppendLine("        => (await _repo.DeleteByIdAsync(request." + ToPascalCase(pkColumn.Name) + ")) > 0;");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        public static string GenerateQueryCode(DbTable table)
+        {
+            var entityName = ToPascalCase(table.Name);
+            var queryName = $"Get{entityName}ByIdQuery";
+            var handlerName = $"Get{entityName}ByIdHandler";
+            var responseDto = $"{entityName}ResponseDto";
+            var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
+
+            var sb = new StringBuilder();
+
+            // Query
+            sb.AppendLine($"// {queryName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Application.Features.{entityName}.DTOs;");
+            sb.AppendLine($"using Application.Features.{entityName}.Mappers;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Queries;");
+            sb.AppendLine();
+            sb.Append($"public record {queryName}(");
+            sb.Append(string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
+            sb.AppendLine($") : IRequest<{responseDto}?>;");
+            sb.AppendLine();
+
+            // Handler
+            sb.AppendLine($"// {handlerName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Domain.Interfaces;");
+            sb.AppendLine($"using Application.Features.{entityName}.DTOs;");
+            sb.AppendLine($"using Application.Features.{entityName}.Mappers;");
+            sb.AppendLine($"using Entities = Domain.Entities;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Queries;");
+            sb.AppendLine();
+            sb.AppendLine($"public class {handlerName} : IRequestHandler<{queryName}, {responseDto}?>");
+            sb.AppendLine("{");
+            sb.AppendLine($"    private readonly I{entityName}Repository _repo;");
+            sb.AppendLine($"    public {handlerName}(I{entityName}Repository repo) => _repo = repo;");
+            sb.AppendLine();
+            sb.AppendLine($"    public async Task<{responseDto}?> Handle({queryName} request, CancellationToken ct)");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var entity = await _repo.GetByIdAsync({string.Join(", ", pkColumns.Select(c => $"request.{ToPascalCase(c.Name)}"))});");
+            sb.AppendLine("        if (entity == null) return null;");
+            sb.AppendLine($"        return {entityName}Mapper.ToDto(entity);");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        public static string GenerateQueryAllCode(DbTable table)
+        {
+            var entityName = ToPascalCase(table.Name);
+            var queryName = $"GetAll{entityName}Query";
+            var handlerName = $"GetAll{entityName}Handler";
+            var responseDto = $"{entityName}ResponseDto";
+
+            var sb = new StringBuilder();
+
+            // QueryAll
+            sb.AppendLine($"// {queryName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Application.Features.{entityName}.DTOs;");
+            sb.AppendLine($"using Application.Features.{entityName}.Mappers;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Queries;");
+            sb.AppendLine();
+            sb.AppendLine($"public record {queryName}() : IRequest<IEnumerable<{responseDto}>>;");
+            sb.AppendLine();
+
+            // Handler
+            sb.AppendLine($"// {handlerName}.cs");
+            sb.AppendLine($"using MediatR;");
+            sb.AppendLine($"using Domain.Interfaces;");
+            sb.AppendLine($"using Application.Features.{entityName}.DTOs;");
+            sb.AppendLine($"using Application.Features.{entityName}.Mappers;");
+            sb.AppendLine($"using Entities = Domain.Entities;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace Application.Features.{entityName}.Queries;");
+            sb.AppendLine();
+            sb.AppendLine($"public class {handlerName} : IRequestHandler<{queryName}, IEnumerable<{responseDto}>>");
+            sb.AppendLine("{");
+            sb.AppendLine($"    private readonly I{entityName}Repository _repo;");
+            sb.AppendLine($"    public {handlerName}(I{entityName}Repository repo) => _repo = repo;");
+            sb.AppendLine();
+            sb.AppendLine($"    public async Task<IEnumerable<{responseDto}>> Handle({queryName} request, CancellationToken ct)");
+            sb.AppendLine("        => (await _repo.GetAllAsync()).Select(entity => entityNameMapper.ToDto(entity));");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        // -------------------------
+        // Helpers
+        // -------------------------
+        private static string ToPascalCase(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return name;
+            var parts = name.Split(new[] { '_', ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            return string.Join("", parts.Select(p => char.ToUpperInvariant(p[0]) + p.Substring(1).ToLowerInvariant()));
+        }
+
+        private static string MapClrType(DbColumn col)
+        {
+            // Usa tu SqlTypeMapper existente para mapear al tipo CLR
+            return SqlTypeMapper.ConvertToClrType(col.SqlType, col.Precision, col.Scale, col.IsNullable).ClrType;
+        }
+    }
+}
