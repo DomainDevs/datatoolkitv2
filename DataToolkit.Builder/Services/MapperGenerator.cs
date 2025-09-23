@@ -88,12 +88,13 @@ public static class MapperGenerator
         sb.AppendLine("// Usa Riok.Mapperly para generar las implementaciones en build.");
         sb.AppendLine("// =========================================================");
         sb.AppendLine();
-        sb.AppendLine("using Application.DTOs;");
-        sb.AppendLine($"using Application.Features.{entityName}.Commands;");
-        sb.AppendLine("using Domain.Entities;");
+        sb.AppendLine($"using Application.Features.{entityName}.DTOs;");
+        sb.AppendLine($"using Application.Features.{entityName}.Commands.Create;");
+        sb.AppendLine($"using Application.Features.{entityName}.Commands.Update;");
         sb.AppendLine("using Riok.Mapperly.Abstractions;");
+        sb.AppendLine("using Entities = Domain.Entities;");
         sb.AppendLine();
-        sb.AppendLine("namespace Application.Mappers;");
+        sb.AppendLine($"namespace Application.Features.{entityName}.Mappers;");
         sb.AppendLine();
         sb.AppendLine("[Mapper]");
         sb.AppendLine($"public static partial class {entityName}Mapper");
@@ -103,11 +104,14 @@ public static class MapperGenerator
         sb.AppendLine($"    public static partial Create{entityName}Command ToCommandCreate(this {dtoName} dto);");
         sb.AppendLine();
         sb.AppendLine("    // Commands → Entity");
-        sb.AppendLine($"    public static partial {entityName} ToEntity(Create{entityName}Command command);");
-        sb.AppendLine($"    public static partial {entityName} ToEntity(Update{entityName}Command command);");
+        sb.AppendLine($"    public static partial Entities.{entityName} ToEntity(Create{entityName}Command command);");
+        sb.AppendLine($"    public static partial Entities.{entityName} ToEntity(Update{entityName}Command command);");
         sb.AppendLine();
         sb.AppendLine("    // Entity → DTO");
-        sb.AppendLine($"    public static partial {dtoName} ToDto({entityName} entity);");
+        sb.AppendLine($"    public static partial {dtoName.Replace("RequestDto", "ResponseDto")} ToDto(Entities.{entityName} entity);");
+        sb.AppendLine();
+        sb.AppendLine("    // Entity → Response DTO");
+        sb.AppendLine($"    public static partial {dtoName.Replace("RequestDto", "ResponseDto")} ToResponseDto(Entities.{entityName} entity);");
         sb.AppendLine("}");
         return sb.ToString();
     }

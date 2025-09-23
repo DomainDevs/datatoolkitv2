@@ -32,7 +32,8 @@ namespace DataToolkit.Builder.Services
                 sb.AppendLine("using System.ComponentModel.DataAnnotations;");
 
             sb.AppendLine();
-            sb.AppendLine("namespace Application.DTOs");
+            //sb.AppendLine("namespace Application.DTOs");
+            sb.AppendLine($"namespace Application.Features.{table.Name}.DTOs");
             sb.AppendLine("{");
 
             sb.AppendLine($"    public class {className}");
