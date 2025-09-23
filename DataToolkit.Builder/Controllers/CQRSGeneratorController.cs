@@ -28,12 +28,15 @@ public class CQRSGeneratorController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.TableName))
             return BadRequest("Se requiere el nombre de la tabla (TableName).");
 
+        if (string.IsNullOrWhiteSpace(request.DomainName))
+            return BadRequest("Se requiere el nombre del dominio (DomainName).");
+
         var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
         var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateCreateCode(table);
+        var code = CQRSGenerator.GenerateCreateCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -46,12 +49,15 @@ public class CQRSGeneratorController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.TableName))
             return BadRequest("Se requiere el nombre de la tabla (TableName).");
 
+        if (string.IsNullOrWhiteSpace(request.DomainName))
+            return BadRequest("Se requiere el nombre del dominio (DomainName).");
+
         var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
         var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateUpdateCode(table);
+        var code = CQRSGenerator.GenerateUpdateCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -64,12 +70,15 @@ public class CQRSGeneratorController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.TableName))
             return BadRequest("Se requiere el nombre de la tabla (TableName).");
 
+        if (string.IsNullOrWhiteSpace(request.DomainName))
+            return BadRequest("Se requiere el nombre del dominio (DomainName).");
+
         var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
         var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateDeleteCode(table);
+        var code = CQRSGenerator.GenerateDeleteCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -82,12 +91,15 @@ public class CQRSGeneratorController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.TableName))
             return BadRequest("Se requiere el nombre de la tabla (TableName).");
 
+        if (string.IsNullOrWhiteSpace(request.DomainName))
+            return BadRequest("Se requiere el nombre del dominio (DomainName).");
+
         var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
         var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateQueryCode(table);
+        var code = CQRSGenerator.GenerateQueryCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -100,12 +112,15 @@ public class CQRSGeneratorController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.TableName))
             return BadRequest("Se requiere el nombre de la tabla (TableName).");
 
+        if (string.IsNullOrWhiteSpace(request.DomainName))
+            return BadRequest("Se requiere el nombre del dominio (DomainName).");
+
         var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
         var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateQueryAllCode(table);
+        var code = CQRSGenerator.GenerateQueryAllCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -134,4 +149,7 @@ public class CQRSRequest
 {
     public string TableName { get; set; } = string.Empty;
     public string Schema { get; set; } = "dbo";
+
+    // Nuevo: concepto de dominio (Ej: Clientes)
+    public string DomainName { get; set; } = string.Empty;
 }
