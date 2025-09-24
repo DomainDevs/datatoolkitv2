@@ -1,138 +1,123 @@
-﻿using System.Text.RegularExpressions;
-using System.Text;
+﻿using System.Text;
+using DataToolkit.Builder.Models;
+using System.Linq;
 
 public static class MapperGenerator
 {
-    public static string Generate(string entityContent, string dtoContent, bool useMapperly)
+    /// <summary>
+    /// Genera el código del mapper usando la metadata de la tabla (DbTable) y el domainName.
+    /// Si useMapperly = true genera el mapper parcial para Riok.Mapperly; si no, genera mapper manual.
+    /// </summary>
+    public static string Generate(DbTable table, string domainName, bool useMapperly)
     {
-        var entityName = ExtractClassName(entityContent);
-        var dtoName = ExtractClassName(dtoContent);
+        var entityName = ToPascalCase(table.Name);            // e.g. PvHeader
+        var domain = ToPascalCase(domainName);                // e.g. Polizas
+        var requestDtoName = entityName + "RequestDto";
+        var responseDtoName = entityName + "ResponseDto";
 
         if (useMapperly)
-            return GenerateMapperly(entityName, dtoName);
+            return GenerateMapperly(domain, entityName, requestDtoName, responseDtoName);
 
-        return GenerateManual(entityContent, dtoContent, entityName, dtoName);
+        return GenerateManual(domain, entityName, requestDtoName, responseDtoName, table);
     }
 
-    private static string GenerateManual(string entityContent, string dtoContent, string entityName, string dtoName)
+    // Manual mapper: basándose en columnas del DbTable
+    private static string GenerateManual(string domain, string entityName, string requestDto, string responseDto, DbTable table)
     {
-        var entityProps = ExtractProperties(entityContent);
-        var dtoProps = ExtractProperties(dtoContent);
-
         var sb = new StringBuilder();
-        sb.AppendLine($"//handwritten mapping (mapping manual es lo más rápido y liviano)");
+
+        sb.AppendLine("// =========================================================");
+        sb.AppendLine("// Mapper manual (generado por DataToolkit)");
+        sb.AppendLine("// =========================================================");
+        sb.AppendLine();
+        sb.AppendLine($"using Application.Features.{domain}.DTOs;");
+        sb.AppendLine($"using Domain.Entities;");
+        sb.AppendLine();
+        sb.AppendLine($"namespace Application.Features.{domain}.Mappers;");
+        sb.AppendLine();
         sb.AppendLine($"public static class {entityName}Mapper");
         sb.AppendLine("{");
 
-        // DTO → Entity
-        sb.AppendLine($"    public static {entityName} ToEntity(this {dtoName} dto)");
+        // DTO → Entity (RequestDto -> Entity)
+        sb.AppendLine($"    public static {entityName} ToEntity(this {requestDto} dto)");
         sb.AppendLine("    {");
-        sb.AppendLine($"        var entity = new {entityName}();");
-        foreach (var prop in dtoProps)
+        sb.AppendLine($"        return new {entityName}");
+        sb.AppendLine("        {");
+        foreach (var col in table.Columns)
         {
-            if (entityProps.ContainsKey(prop.Key))
-            {
-                var entityType = entityProps[prop.Key];
-                var dtoType = prop.Value;
-
-                if (entityType == dtoType)
-                {
-                    // mismo tipo → asignación directa
-                    sb.AppendLine($"        entity.{prop.Key} = dto.{prop.Key};");
-                }
-                else
-                {
-                    // tipos distintos → intentar llamar mapper auxiliar
-                    sb.AppendLine($"        entity.{prop.Key} = dto.{prop.Key}?.ToEntity();");
-                }
-            }
+            var prop = ToPascalCase(col.Name);
+            sb.AppendLine($"            {prop} = dto.{prop},");
         }
-        sb.AppendLine("        return entity;");
+        sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
 
-        // Entity → DTO
-        sb.AppendLine($"    public static {dtoName} ToDto(this {entityName} entity)");
+        // Entity → DTO (Entity -> ResponseDto)
+        sb.AppendLine($"    public static {responseDto} ToDto(this {entityName} entity)");
         sb.AppendLine("    {");
-        sb.AppendLine($"        var dto = new {dtoName}();");
-        foreach (var prop in entityProps)
+        sb.AppendLine($"        return new {responseDto}");
+        sb.AppendLine("        {");
+        foreach (var col in table.Columns)
         {
-            if (dtoProps.ContainsKey(prop.Key))
-            {
-                var entityType = prop.Value;
-                var dtoType = dtoProps[prop.Key];
-
-                if (entityType == dtoType)
-                {
-                    sb.AppendLine($"        dto.{prop.Key} = entity.{prop.Key};");
-                }
-                else
-                {
-                    sb.AppendLine($"        dto.{prop.Key} = entity.{prop.Key}?.ToDto();");
-                }
-            }
+            var prop = ToPascalCase(col.Name);
+            sb.AppendLine($"            {prop} = entity.{prop},");
         }
-        sb.AppendLine("        return dto;");
+        sb.AppendLine("        };");
         sb.AppendLine("    }");
 
         sb.AppendLine("}");
+
         return sb.ToString();
     }
 
-
-    private static string GenerateMapperly(string entityName, string dtoName)
+    // Mapperly partial mapper
+    private static string GenerateMapperly(string domain, string entityName, string requestDto, string responseDto)
     {
         var sb = new StringBuilder();
+
         sb.AppendLine("// =========================================================");
         sb.AppendLine("// Este mapper fue generado automáticamente por DataToolkit.");
         sb.AppendLine("// Usa Riok.Mapperly para generar las implementaciones en build.");
         sb.AppendLine("// =========================================================");
         sb.AppendLine();
-        sb.AppendLine($"using Application.Features.{entityName}.DTOs;");
-        sb.AppendLine($"using Application.Features.{entityName}.Commands.Create;");
-        sb.AppendLine($"using Application.Features.{entityName}.Commands.Update;");
+        sb.AppendLine($"using Application.Features.{domain}.DTOs;");
+        sb.AppendLine($"using Application.Features.{domain}.Commands.Create;");
+        sb.AppendLine($"using Application.Features.{domain}.Commands.Update;");
         sb.AppendLine("using Riok.Mapperly.Abstractions;");
         sb.AppendLine("using Entities = Domain.Entities;");
         sb.AppendLine();
-        sb.AppendLine($"namespace Application.Features.{entityName}.Mappers;");
+        sb.AppendLine($"namespace Application.Features.{domain}.Mappers;");
         sb.AppendLine();
         sb.AppendLine("[Mapper]");
         sb.AppendLine($"public static partial class {entityName}Mapper");
         sb.AppendLine("{");
-        sb.AppendLine("    // DTO → Commands");
-        sb.AppendLine($"    public static partial Update{entityName}Command ToUpdateCommand(this {dtoName} dto);");
-        sb.AppendLine($"    public static partial Create{entityName}Command ToCommandCreate(this {dtoName} dto);");
+        sb.AppendLine($"    // DTO → Commands");
+        sb.AppendLine($"    public static partial Update{entityName}Command ToUpdateCommand(this {requestDto} dto);");
+        sb.AppendLine($"    public static partial Create{entityName}Command ToCommandCreate(this {requestDto} dto);");
         sb.AppendLine();
-        sb.AppendLine("    // Commands → Entity");
+        sb.AppendLine($"    // Commands → Entity");
         sb.AppendLine($"    public static partial Entities.{entityName} ToEntity(Create{entityName}Command command);");
         sb.AppendLine($"    public static partial Entities.{entityName} ToEntity(Update{entityName}Command command);");
         sb.AppendLine();
-        sb.AppendLine("    // Entity → DTO");
-        sb.AppendLine($"    public static partial {dtoName.Replace("RequestDto", "ResponseDto")} ToDto(Entities.{entityName} entity);");
+        sb.AppendLine($"    // Entity → DTO");
+        sb.AppendLine($"    public static partial {responseDto} ToDto(Entities.{entityName} entity);");
         sb.AppendLine();
-        sb.AppendLine("    // Entity → Response DTO");
-        sb.AppendLine($"    public static partial {dtoName.Replace("RequestDto", "ResponseDto")} ToResponseDto(Entities.{entityName} entity);");
+        //sb.AppendLine($"    // Entity → Response DTO");
+        //sb.AppendLine($"    public static partial {responseDto} ToResponseDto(Entities.{entityName} entity);");
         sb.AppendLine("}");
+
         return sb.ToString();
     }
 
-
-    private static string ExtractClassName(string content)
+    // -------------------------
+    // Helpers
+    // -------------------------
+    private static string ToPascalCase(string name)
     {
-        var match = Regex.Match(content, @"class\s+(\w+)");
-        return match.Success ? match.Groups[1].Value : "UnknownClass";
-    }
-
-    private static Dictionary<string, string> ExtractProperties(string content)
-    {
-        var dict = new Dictionary<string, string>();
-        var matches = Regex.Matches(content, @"public\s+(\w+)\??\s+(\w+)\s*{");
-        foreach (Match match in matches)
-        {
-            var type = match.Groups[1].Value;
-            var name = match.Groups[2].Value;
-            dict[name] = type;
-        }
-        return dict;
+        if (string.IsNullOrWhiteSpace(name)) return name;
+        var parts = name.Split(new[] { '_', ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < parts.Length; i++)
+            parts[i] = char.ToUpperInvariant(parts[i][0]) + parts[i].Substring(1).ToLowerInvariant();
+        return string.Join("", parts);
     }
 }

@@ -18,12 +18,13 @@ namespace DataToolkit.Builder.Services
             _jsonMapping = jsonMapping ?? new Dictionary<string, string>();
         }
 
-        public string GenerateDto(DbTable table, string mode = "request")
+        public string GenerateDto(DbTable table, string domainName, string mode = "request")
         {
             var sb = new StringBuilder();
             bool isRequest = mode.ToLower() == "request";
 
-            var className = table.Name + (isRequest ? "RequestDto" : "ResponseDto");
+            var className = ToPascalCase(table.Name) + (isRequest ? "RequestDto" : "ResponseDto");
+            //var className = ToPascalCase(table.Name) + (isRequest ? "RequestDto" : "ResponseDto");
 
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Text.Json.Serialization;");
@@ -33,7 +34,7 @@ namespace DataToolkit.Builder.Services
 
             sb.AppendLine();
             //sb.AppendLine("namespace Application.DTOs");
-            sb.AppendLine($"namespace Application.Features.{table.Name}.DTOs");
+            sb.AppendLine($"namespace Application.Features.{domainName}.DTOs");
             sb.AppendLine("{");
 
             sb.AppendLine($"    public class {className}");

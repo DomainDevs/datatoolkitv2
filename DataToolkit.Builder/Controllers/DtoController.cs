@@ -19,19 +19,20 @@ namespace DataToolkit.Builder.Controllers
         }
 
         // schema opcional, por defecto "dbo"
-        [HttpGet("{tableName}")]
+        [HttpGet("{domainName}/{tableName}")]
         public async Task<IActionResult> GenerateDto(
+            string domainName,
             string tableName,
             string mode = "request",
-            string schema = "dbo") // valor por defecto
+            string schema = "dbo")
         {
             // Extraer metadata
             var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, tableName);
             if (table == null)
                 return NotFound($"Table {schema}.{tableName} not found");
 
-            // Generar DTO según el modo
-            var code = _dtoGeneratorService.GenerateDto(table, mode.ToLower());
+            // Generar DTO según el modo, pasando también el domainName
+            var code = _dtoGeneratorService.GenerateDto(table, domainName, mode.ToLower());
 
             return Ok(code);
         }

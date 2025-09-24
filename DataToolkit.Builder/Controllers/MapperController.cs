@@ -8,25 +8,33 @@ namespace DataToolkit.Builder.Controllers;
 [Route("api/[controller]")]
 public class MapperController : ControllerBase
 {
-    // Método 1: subir archivos desde la web (Swagger)
-    [HttpPost("upload")]
-    [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadFiles([FromForm] MapperUploadRequest request)
+    private readonly ScriptExtractionService _scriptExtractionService;
+
+    public MapperController(ScriptExtractionService scriptExtractionService)
     {
-        if (request.EntityFile == null || request.DtoFile == null)
-            return BadRequest("Debe subir ambos archivos: Entity y DTO.");
+        _scriptExtractionService = scriptExtractionService;
+    }
 
-        string entityContent;
-        string dtoContent;
+    /// <summary>
+    /// Genera el mapper para la tabla indicada usando la metadata real (no upload).
+    /// Request debe traer: Schema (opcional), TableName y DomainName.
+    /// </summary>
+    [HttpPost("generate")]
+    public async Task<IActionResult> Generate([FromBody] MapperRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TableName))
+            return BadRequest("Se requiere TableName.");
 
-        using (var reader = new StreamReader(request.EntityFile.OpenReadStream()))
-            entityContent = await reader.ReadToEndAsync();
+        if (string.IsNullOrWhiteSpace(request.DomainName))
+            return BadRequest("Se requiere DomainName.");
 
-        using (var reader = new StreamReader(request.DtoFile.OpenReadStream()))
-            dtoContent = await reader.ReadToEndAsync();
+        var schema = string.IsNullOrWhiteSpace(request.Schema) ? "dbo" : request.Schema;
+        var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, request.TableName);
+        if (table == null)
+            return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        // Generar el mapper
-        var mapperCode = MapperGenerator.Generate(entityContent, dtoContent, request.UseMapperly);
+        // Generar mapper a partir de metadata + domainName
+        var mapperCode = MapperGenerator.Generate(table, request.DomainName, request.UseMapperly);
 
         return Content(mapperCode, "text/plain");
     }
