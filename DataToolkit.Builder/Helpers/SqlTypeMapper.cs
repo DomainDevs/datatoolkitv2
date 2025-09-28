@@ -3,7 +3,7 @@
     public static class SqlTypeMapper
     {
         public static (string ClrType, string? RangeAttribute) ConvertToClrType(
-            string sqlType, int? precision, int? scale, bool isNullable, bool isEntity = false)
+            string sqlType, int? precision, int? scale, int? sLength, bool isNullable, bool isEntity = false)
         {
             sqlType = sqlType.ToLowerInvariant();
             string clrType;
@@ -100,11 +100,11 @@
                     clrType = "string";
                     if (isEntity)
                     {
-                        rangeAttribute = $"[MaxLength({precision})]";
+                        rangeAttribute = $"[MaxLength({sLength})]";
                     }
                     else
                     {
-                        rangeAttribute = $"[StringLength({precision})]";
+                        rangeAttribute = $"[StringLength({sLength})]";
                     }
                      break;
 

@@ -18,62 +18,55 @@ namespace DataToolkit.Builder.Services
             _jsonMapping = jsonMapping ?? new Dictionary<string, string>();
         }
 
-        public string GenerateDto(DbTable table, string domainName, string mode = "request")
+        public string GenerateDto(DbTable table, string domainName, string mode = "response", string operation = "Create")
         {
             var sb = new StringBuilder();
             bool isRequest = mode.ToLower() == "request";
 
-            var className = ToPascalCase(table.Name) + (isRequest ? "RequestDto" : "ResponseDto");
-            //var className = ToPascalCase(table.Name) + (isRequest ? "RequestDto" : "ResponseDto");
+            var className = $"{ToPascalCase(table.Name)}{operation}{(isRequest ? "RequestDto" : "ResponseDto")}";
 
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Text.Json.Serialization;");
-
             if (isRequest)
                 sb.AppendLine("using System.ComponentModel.DataAnnotations;");
 
             sb.AppendLine();
-            //sb.AppendLine("namespace Application.DTOs");
             sb.AppendLine($"namespace Application.Features.{domainName}.DTOs");
             sb.AppendLine("{");
-
             sb.AppendLine($"    public class {className}");
             sb.AppendLine("    {");
 
             foreach (var column in table.Columns)
             {
-                // JsonPropertyName según mapeo o por defecto en PascalCase
+                // REGLAS SEGÚN OPERACIÓN
+                if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase)
+                    && column.IsPrimaryKey && column.IsIdentity)
+                {
+                    // En CREATE no incluimos Identity PK
+                    sb.AppendLine($"        [JsonIgnore]");
+                }
+
+                if (operation.Equals("Update", StringComparison.OrdinalIgnoreCase)
+                    && column.IsPrimaryKey)
+                {
+                    // En UPDATE no incluimos ninguna PK
+                    
+                    sb.AppendLine($"        [JsonIgnore]");
+                }
+
                 string jsonName = _jsonMapping.ContainsKey(column.Name)
                     ? _jsonMapping[column.Name]
-                    : ToPascalCase(column.Name); // aquí mantiene funcionalidad original si hay mapeo
+                    : ToPascalCase(column.Name);
 
-                if (isRequest)
-                {
-                    if (column.IsPrimaryKey && column.IsIdentity)
-                    {
-                        sb.AppendLine("        //Identity");
-                        //sb.AppendLine();
-                        //continue;
-                    }
-                    sb.AppendLine($"        [JsonPropertyName(\"{jsonName}\")]");
-                }
-                else
-                {
-                    sb.AppendLine($"        [JsonPropertyName(\"{jsonName}\")]");
-                }
-                    
+                sb.AppendLine($"        [JsonPropertyName(\"{jsonName}\")]");
 
-                if (column.SqlType.ToLower().Contains("char"))
-                {
-                    column.Precision = column.Length;
-                }
-
-                    var (clrType, rangeAttr) = SqlTypeMapper.ConvertToClrType(
+                var (clrType, rangeAttr) = SqlTypeMapper.ConvertToClrType(
                     column.SqlType,
                     column.Precision,
                     column.Scale,
+                    column.Length,
                     column.IsNullable
-                    );
+                );
 
                 if (isRequest)
                 {
@@ -82,15 +75,9 @@ namespace DataToolkit.Builder.Services
 
                     if (!string.IsNullOrEmpty(rangeAttr))
                         sb.AppendLine($"        {rangeAttr}");
-
-                    sb.AppendLine($"        public {clrType}{(column.IsNullable && clrType != "string" ? "" : "")} {jsonName} {{ get; set; }}");
-
-                }
-                else
-                {
-                    sb.AppendLine($"        public {clrType}{(column.IsNullable && clrType != "string" ? "" : "")} {jsonName} {{ get; set; }}");
                 }
 
+                sb.AppendLine($"        public {clrType}{(column.IsNullable && clrType != "string" ? "" : "")} {jsonName} {{ get; set; }}");
                 sb.AppendLine();
             }
 
@@ -99,6 +86,8 @@ namespace DataToolkit.Builder.Services
 
             return sb.ToString();
         }
+
+
 
         private string ToPascalCase(string name)
         {

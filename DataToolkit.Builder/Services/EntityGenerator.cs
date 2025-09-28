@@ -43,6 +43,7 @@ namespace DataToolkit.Builder.Services
                 column.SqlType,
                 column.Precision,
                 column.Scale,
+                column.Length,
                 column.IsNullable,
                 true
                 );

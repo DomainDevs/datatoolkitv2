@@ -2,6 +2,7 @@
 using System.Text;
 using System.Linq;
 using DataToolkit.Builder.Helpers;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DataToolkit.Builder.Services
 {
@@ -12,8 +13,8 @@ namespace DataToolkit.Builder.Services
             var entityName = ToPascalCase(table.Name);
             var domain = ToPascalCase(domainName);
 
-            var commandName = $"Create{entityName}Command";
-            var handlerName = $"Create{entityName}Handler";
+            var commandName = $"{entityName}CreateCommand";
+            var handlerName = $"{entityName}CreateHandler";
             var responseDto = $"{entityName}ResponseDto";
 
             var sb = new StringBuilder();
@@ -23,7 +24,7 @@ namespace DataToolkit.Builder.Services
             // -------------------------
             sb.AppendLine($"// {commandName}.cs");
             sb.AppendLine("using MediatR;");
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands.Create;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Commands;");
             sb.AppendLine();
             sb.Append($"public record {commandName}(");
             sb.Append(string.Join(", ", table.Columns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
@@ -36,10 +37,11 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"// {handlerName}.cs");
             sb.AppendLine("using MediatR;");
             sb.AppendLine("using Domain.Interfaces;");
+            sb.AppendLine($"using Application.Features.{domain}.Commands;");
             sb.AppendLine($"using Application.Features.{domain}.Mappers;");
             sb.AppendLine("using Entities = Domain.Entities;");
             sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands.Create;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Handlers;");
             sb.AppendLine();
             sb.AppendLine($"public class {handlerName} : IRequestHandler<{commandName}, int>");
             sb.AppendLine("{");
@@ -61,8 +63,8 @@ namespace DataToolkit.Builder.Services
             var entityName = ToPascalCase(table.Name);
             var domain = ToPascalCase(domainName);
 
-            var commandName = $"Update{entityName}Command";
-            var handlerName = $"Update{entityName}Handler";
+            var commandName = $"{entityName}UpdateCommand";
+            var handlerName = $"{entityName}UpdateHandler";
 
             var sb = new StringBuilder();
 
@@ -74,7 +76,7 @@ namespace DataToolkit.Builder.Services
             // -------------------------
             sb.AppendLine($"// {commandName}.cs");
             sb.AppendLine("using MediatR;");
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands.Update;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Commands;");
             sb.AppendLine();
             sb.Append($"public record {commandName}(");
             sb.Append(string.Join(", ", pkColumns.Concat(nonPkColumns)
@@ -88,10 +90,11 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"// {handlerName}.cs");
             sb.AppendLine("using MediatR;");
             sb.AppendLine("using Domain.Interfaces;");
+            sb.AppendLine($"using Application.Features.{domain}.Commands;");
             sb.AppendLine($"using Application.Features.{domain}.Mappers;");
             sb.AppendLine("using Entities = Domain.Entities;");
             sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands.Update;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Handlers;");
             sb.AppendLine();
             sb.AppendLine($"public class {handlerName} : IRequestHandler<{commandName}, int>");
             sb.AppendLine("{");
@@ -113,8 +116,8 @@ namespace DataToolkit.Builder.Services
             var entityName = ToPascalCase(table.Name);
             var domain = ToPascalCase(domainName);
 
-            var commandName = $"Delete{entityName}Command";
-            var handlerName = $"Delete{entityName}Handler";
+            var commandName = $"{entityName}DeleteCommand";
+            var handlerName = $"{entityName}DeleteHandler";
             var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
 
             var sb = new StringBuilder();
@@ -124,7 +127,7 @@ namespace DataToolkit.Builder.Services
             // -------------------------
             sb.AppendLine($"// {commandName}.cs");
             sb.AppendLine("using MediatR;");
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands.Delete;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Commands;");
             sb.AppendLine();
             sb.AppendLine($"public record {commandName}({string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}"))}) : IRequest<bool>;");
             sb.AppendLine();
@@ -134,9 +137,10 @@ namespace DataToolkit.Builder.Services
             // -------------------------
             sb.AppendLine($"// {handlerName}.cs");
             sb.AppendLine("using MediatR;");
+            sb.AppendLine($"using Application.Features.{domain}.Commands;");
             sb.AppendLine("using Domain.Interfaces;");
             sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands.Delete;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Handlers;");
             sb.AppendLine();
             sb.AppendLine($"public class {handlerName} : IRequestHandler<{commandName}, bool>");
             sb.AppendLine("{");
@@ -155,9 +159,9 @@ namespace DataToolkit.Builder.Services
             var entityName = ToPascalCase(table.Name);
             var domain = ToPascalCase(domainName);
 
-            var queryName = $"Get{entityName}ByIdQuery";
-            var handlerName = $"Get{entityName}ByIdHandler";
-            var responseDto = $"{entityName}ResponseDto";
+            var queryName = $"{entityName}GetByIdQuery";
+            var handlerName = $"{entityName}GetByIdHandler";
+            var responseDto = $"{entityName}QueryResponseDto";
             var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
 
             var sb = new StringBuilder();
@@ -166,7 +170,6 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"// {queryName}.cs");
             sb.AppendLine("using MediatR;");
             sb.AppendLine($"using Application.Features.{domain}.DTOs;");
-            sb.AppendLine($"using Application.Features.{domain}.Mappers;");
             sb.AppendLine();
             sb.AppendLine($"namespace Application.Features.{domain}.Queries;");
             sb.AppendLine();
@@ -181,9 +184,10 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("using Domain.Interfaces;");
             sb.AppendLine($"using Application.Features.{domain}.DTOs;");
             sb.AppendLine($"using Application.Features.{domain}.Mappers;");
+            sb.AppendLine($"using Application.Features.{domain}.Queries;");
             sb.AppendLine("using Entities = Domain.Entities;");
             sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Queries;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Handlers;");
             sb.AppendLine();
             sb.AppendLine($"public class {handlerName} : IRequestHandler<{queryName}, {responseDto}?>");
             sb.AppendLine("{");
@@ -206,9 +210,9 @@ namespace DataToolkit.Builder.Services
             var entityName = ToPascalCase(table.Name);
             var domain = ToPascalCase(domainName);
 
-            var queryName = $"GetAll{entityName}Query";
-            var handlerName = $"GetAll{entityName}Handler";
-            var responseDto = $"{entityName}ResponseDto";
+            var queryName = $"{entityName}GetAllQuery";
+            var handlerName = $"{entityName}GetAllHandler";
+            var responseDto = $"{entityName}QueryResponseDto";
 
             var sb = new StringBuilder();
 
@@ -216,7 +220,6 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"// {queryName}.cs");
             sb.AppendLine("using MediatR;");
             sb.AppendLine($"using Application.Features.{domain}.DTOs;");
-            sb.AppendLine($"using Application.Features.{domain}.Mappers;");
             sb.AppendLine();
             sb.AppendLine($"namespace Application.Features.{domain}.Queries;");
             sb.AppendLine();
@@ -228,10 +231,11 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("using MediatR;");
             sb.AppendLine("using Domain.Interfaces;");
             sb.AppendLine($"using Application.Features.{domain}.DTOs;");
+            sb.AppendLine($"using Application.Features.{domain}.Queries;");
             sb.AppendLine($"using Application.Features.{domain}.Mappers;");
             sb.AppendLine("using Entities = Domain.Entities;");
             sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Queries;");
+            sb.AppendLine($"namespace Application.Features.{domain}.Handlers;");
             sb.AppendLine();
             sb.AppendLine($"public class {handlerName} : IRequestHandler<{queryName}, IEnumerable<{responseDto}>>");
             sb.AppendLine("{");
@@ -257,7 +261,7 @@ namespace DataToolkit.Builder.Services
 
         private static string MapClrType(DbColumn col)
         {
-            return SqlTypeMapper.ConvertToClrType(col.SqlType, col.Precision, col.Scale, col.IsNullable).ClrType;
+            return SqlTypeMapper.ConvertToClrType(col.SqlType, col.Precision, col.Scale, col.Length, col.IsNullable).ClrType;
         }
     }
 }

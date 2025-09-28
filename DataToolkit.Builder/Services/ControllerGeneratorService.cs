@@ -27,17 +27,17 @@ namespace DataToolkit.Builder.Services
 
             var entityName = ToPascalCase(table.Name);
             var controllerName = $"{entityName}Controller";
-            var requestDto = $"{entityName}RequestDto";
+            var requestDto = $"RequestDto"; //{entityName}
             var commandCreate = $"Create{entityName}Command";
-            var queryAll = $"GetAll{entityName}Query";
-            var queryById = $"Get{entityName}ByIdQuery";
-            var commandUpdate = $"Update{entityName}Command";
-            var commandDelete = $"Delete{entityName}Command";
+            var queryAll = $"{entityName}GetAllQuery";
+            var queryById = $"{entityName}GetByIdQuery";
+            var commandUpdate = $"{entityName}UpdateCommand";
+            var commandDelete = $"{entityName}DeleteCommand";
 
             // parámetros PK
             var pkParams = string.Join(", ", pkColumns.Select(c =>
             {
-                var (clrType, _) = SqlTypeMapper.ConvertToClrType(c.SqlType, c.Precision, c.Scale, c.IsNullable);
+                var (clrType, _) = SqlTypeMapper.ConvertToClrType(c.SqlType, c.Precision, c.Scale, c.Length, c.IsNullable);
                 return $"{clrType} {c.Name.ToLower()}";
             }));
 
@@ -56,9 +56,7 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("using MediatR;");
             sb.AppendLine("using Microsoft.AspNetCore.Mvc;");
             sb.AppendLine($"using Application.Features.{domainName}.Queries;");
-            sb.AppendLine($"using Application.Features.{domainName}.Commands.Create;");
-            sb.AppendLine($"using Application.Features.{domainName}.Commands.Update;");
-            sb.AppendLine($"using Application.Features.{domainName}.Commands.Delete;");
+            sb.AppendLine($"using Application.Features.{domainName}.Commands;");
             sb.AppendLine($"using Application.Features.{domainName}.DTOs;");
             sb.AppendLine($"using Application.Features.{domainName}.Mappers;");
             sb.AppendLine();
@@ -94,7 +92,7 @@ namespace DataToolkit.Builder.Services
 
             // Create
             sb.AppendLine("    [HttpPost]");
-            sb.AppendLine($"    public async Task<IActionResult> Create([FromBody] {requestDto} dto)");
+            sb.AppendLine($"    public async Task<IActionResult> Create([FromBody] {entityName}Create{requestDto} dto)");
             sb.AppendLine("    {");
             sb.AppendLine("        if (!ModelState.IsValid) return BadRequest(ModelState);");
             sb.AppendLine($"        var command = dto.ToCommandCreate();");
@@ -116,9 +114,18 @@ namespace DataToolkit.Builder.Services
 
             // Update
             sb.AppendLine($"    [HttpPut(\"{pkRoute}\")]");
-            sb.AppendLine($"    public async Task<IActionResult> Update({pkParams}, [FromBody] {requestDto} dto)");
+            sb.AppendLine($"    public async Task<IActionResult> Update({pkParams}, [FromBody] {entityName}Update{requestDto} dto)");
             sb.AppendLine("    {");
             sb.AppendLine("        if (!ModelState.IsValid) return BadRequest(ModelState);");
+            sb.AppendLine();
+            sb.AppendLine("        // inyección de llaves");
+            foreach (var pk in pkColumns)
+            {
+                var paramName = pk.Name.ToLower();
+                var propName = ToPascalCase(pk.Name);
+                sb.AppendLine($"        dto.{propName} = {paramName};");
+            }
+            sb.AppendLine();
             sb.AppendLine($"        var command = dto.ToUpdateCommand();");
             sb.AppendLine("        var result = await _mediator.Send(command);");
             sb.AppendLine("        return result == 0 ? NotFound() : NoContent();");
