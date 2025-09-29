@@ -64,7 +64,7 @@
                             // número con decimales
                             clrType = "decimal";
                             // Ejemplo: precision = 10, scale = 2 → rango ±99999999.99
-                            var intPart = precision.Value - scale.Value;
+                            var intPart = precision.Value; //- scale.Value; //precision.Value - scale.Value;
                             if (intPart > 0)
                             {
                                 var maxIntPart = new string('9', intPart);

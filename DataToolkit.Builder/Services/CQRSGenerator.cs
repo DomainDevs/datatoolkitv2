@@ -104,7 +104,7 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"    public async Task<int> Handle({commandName} request, CancellationToken ct)");
             sb.AppendLine("    {");
             sb.AppendLine($"        var entity = {entityName}Mapper.ToEntity(request);");
-            sb.AppendLine("        return await _repo.UpdateAsync(entity);");
+            sb.AppendLine("        return await _repo.UpdateAsync(entity); //Specify fields => ...UpdateAsync(entity, c => c.Field1, c => c.Field2);");
             sb.AppendLine("    }");
             sb.AppendLine("}");
 

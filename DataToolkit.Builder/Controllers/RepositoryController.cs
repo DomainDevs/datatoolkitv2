@@ -154,7 +154,7 @@ public class RepositoryController : ControllerBase
         var parts = new List<string>();
         foreach (var col in pkColumns)
         {
-            var (clrType, _) = SqlTypeMapper.ConvertToClrType(col.SqlType, col.Precision, col.Scale, col.IsNullable);
+            var (clrType, _) = SqlTypeMapper.ConvertToClrType(col.SqlType, col.Precision, col.Scale, col.Length, col.IsNullable);
             var propName = ToPascalCase(col.Name);
             var varName = ToCamelCase(propName);
             parts.Add($"{clrType} {varName}");

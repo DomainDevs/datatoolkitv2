@@ -118,7 +118,7 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("    {");
             sb.AppendLine("        if (!ModelState.IsValid) return BadRequest(ModelState);");
             sb.AppendLine();
-            sb.AppendLine("        // inyección de llaves");
+            sb.AppendLine("        //Inyección de llaves");
             foreach (var pk in pkColumns)
             {
                 var paramName = pk.Name.ToLower();
