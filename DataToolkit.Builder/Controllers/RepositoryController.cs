@@ -24,7 +24,7 @@ public class RepositoryController : ControllerBase
     /// Genera el código del repository usando la metadata real de la tabla (incluyendo llaves).
     /// Request debe traer schema y tableName.
     /// </summary>
-    [HttpPost("generate")]
+    [HttpPost("generate/generic")]
     public async Task<IActionResult> GenerateRepository([FromBody] RepositoryRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.TableName))
@@ -35,7 +35,7 @@ public class RepositoryController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        // Nombres/espacios
+        // Definición de nombres
         var entityNamespace = string.IsNullOrWhiteSpace(request.EntityNamespace)
             ? "Domain.Entities"
             : request.EntityNamespace;
@@ -44,106 +44,77 @@ public class RepositoryController : ControllerBase
             ? "Persistence.Repositories"
             : request.RepositoryNamespace;
 
-        var entityName = ToPascalCase(table.Name); // nombre de la entidad generado a partir del nombre de la tabla
+        var entityName = ToPascalCase(table.Name);
         var repositoryName = $"{entityName}Repository";
         var interfaceName = $"I{entityName}Repository";
 
-        var sb = new StringBuilder();
-
-        // Usings
-        sb.AppendLine("using DataToolkit.Library.Repositories;");
-        sb.AppendLine($"using {entityNamespace};");
-        sb.AppendLine("using Domain.Interfaces;");
-        sb.AppendLine("using System.Data;");
-        sb.AppendLine("using System.Linq.Expressions;");
-        sb.AppendLine();
-
-        // Namespace
-        sb.AppendLine($"namespace {repositoryNamespace}");
-        sb.AppendLine("{");
-
-        // Interfaz (opcional: genera una interfaz compatible)
-        sb.AppendLine($"    // Interfaz I{entityName}Repository (autogenerada)");
-        sb.AppendLine($"    public interface {interfaceName}");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        Task<int> InsertAsync({entityName} entity);");
-        sb.AppendLine($"        Task<int> UpdateAsync({entityName} entity, params Expression<Func<{entityName}, object>>[] includeProperties);");
-
+        // Generar métodos dinámicos según PK
         var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
+        string interfaceMethods;
+        string classMethods;
 
         if (!pkColumns.Any())
         {
-            // sin PK: fallback a métodos que reciben la entidad
-            sb.AppendLine($"        Task<int> DeleteAsync({entityName} entity);");
-            sb.AppendLine($"        Task<{entityName}?> GetByIdAsync({entityName} entity);");
+            // Sin PK: DeleteAsync y GetByIdAsync por entidad
+            interfaceMethods = $@"
+        Task<int> DeleteAsync({entityName} entity);
+        Task<{entityName}?> GetByIdAsync({entityName} entity);";
+
+            classMethods = $@"
+        public Task<int> DeleteAsync({entityName} entity)
+        {{
+            return _repo.DeleteAsync(entity);
+        }}
+
+        public Task<{entityName}?> GetByIdAsync({entityName} entity)
+        {{
+            return _repo.GetByIdAsync(entity);
+        }}";
         }
         else
         {
-            // PK simples o compuestas: generamos firmas con argumentos por cada PK
-            var paramList = BuildParameterList(pkColumns);
-            sb.AppendLine($"        Task<int> DeleteByIdAsync({paramList});");
-            sb.AppendLine($"        Task<{entityName}?> GetByIdAsync({paramList});");
-        }
-
-        sb.AppendLine($"        Task<IEnumerable<{entityName}>> GetAllAsync();");
-        sb.AppendLine("    }");
-        sb.AppendLine();
-
-        // Clase
-        sb.AppendLine($"    public class {repositoryName} : {interfaceName}");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        private readonly GenericRepository<{entityName}> _repo;");
-        sb.AppendLine();
-        sb.AppendLine($"        public {repositoryName}(IDbConnection connection)");
-        sb.AppendLine("        {");
-        sb.AppendLine($"            _repo = new GenericRepository<{entityName}>(connection);");
-        sb.AppendLine("        }");
-        sb.AppendLine();
-        sb.AppendLine($"        public Task<int> InsertAsync({entityName} entity) => _repo.InsertAsync(entity);");
-        sb.AppendLine();
-        sb.AppendLine($"        public Task<int> UpdateAsync({entityName} entity, params Expression<Func<{entityName}, object>>[] includeProperties)");
-        sb.AppendLine("            => _repo.UpdateAsync(entity, includeProperties);");
-        sb.AppendLine();
-
-        if (!pkColumns.Any())
-        {
-            // sin PK: DeleteAsync / GetByIdAsync con entidad
-            sb.AppendLine($"        public Task<int> DeleteAsync({entityName} entity) => _repo.DeleteAsync(entity);");
-            sb.AppendLine();
-            sb.AppendLine($"        public Task<{entityName}?> GetByIdAsync({entityName} entity) => _repo.GetByIdAsync(entity);");
-            sb.AppendLine();
-        }
-        else
-        {
-            // DeleteByIdAsync + GetByIdAsync con parámetros por cada PK
+            // Con PK: métodos con parámetros
             var paramList = BuildParameterList(pkColumns);
             var initObject = BuildEntityInitializer(entityName, pkColumns);
 
-            // DeleteByIdAsync
-            sb.AppendLine($"        public async Task<int> DeleteByIdAsync({paramList})");
-            sb.AppendLine("        {");
-            sb.AppendLine($"            {initObject}");
-            sb.AppendLine("            return await _repo.DeleteAsync(entity);");
-            sb.AppendLine("        }");
-            sb.AppendLine();
+            interfaceMethods = $@"
+        Task<int> DeleteByIdAsync({paramList});
+        Task<{entityName}?> GetByIdAsync({paramList});";
 
-            // GetByIdAsync
-            sb.AppendLine($"        public Task<{entityName}?> GetByIdAsync({paramList})");
-            sb.AppendLine("        {");
-            sb.AppendLine($"            {initObject}");
-            sb.AppendLine("            return _repo.GetByIdAsync(entity);");
-            sb.AppendLine("        }");
-            sb.AppendLine();
+            classMethods = $@"
+        public async Task<int> DeleteByIdAsync({paramList})
+        {{
+            {initObject}
+            return await _repo.DeleteAsync(entity);
+        }}
+
+        public Task<{entityName}?> GetByIdAsync({paramList})
+        {{
+            {initObject}
+            return _repo.GetByIdAsync(entity);
+        }}";
         }
 
-        // GetAll
-        sb.AppendLine($"        public Task<IEnumerable<{entityName}>> GetAllAsync() => _repo.GetAllAsync();");
+        // Leer la plantilla
+        var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repository", "GenericRepository.tpl");
+        if (!System.IO.File.Exists(templatePath))
+            return NotFound("No se encontró la plantilla GenericRepository.tpl");
 
-        sb.AppendLine("    }"); // end class
-        sb.AppendLine("}"); // end namespace
+        var template = await System.IO.File.ReadAllTextAsync(templatePath);
 
-        return Content(sb.ToString(), "text/plain");
+        // Reemplazar placeholders
+        var output = template
+            .Replace("{{EntityNamespace}}", entityNamespace)
+            .Replace("{{RepositoryNamespace}}", repositoryNamespace)
+            .Replace("{{EntityName}}", entityName)
+            .Replace("{{RepositoryName}}", repositoryName)
+            .Replace("{{InterfaceName}}", interfaceName)
+            .Replace("{{InterfaceMethods}}", interfaceMethods)
+            .Replace("{{ClassMethods}}", classMethods);
+
+        return Content(output, "text/plain");
     }
+
 
     // -------------------------
     // Helpers para generación
