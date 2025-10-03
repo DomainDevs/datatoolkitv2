@@ -6,14 +6,6 @@ using System.Linq.Expressions;
 
 namespace {{RepositoryNamespace}}
 {
-    public interface {{InterfaceName}}
-    {
-        Task<int> InsertAsync({{EntityName}} entity);
-        Task<int> UpdateAsync({{EntityName}} entity, params Expression<Func<{{EntityName}}, object>>[] includeProperties);
-        Task<IEnumerable<{{EntityName}}>> GetAllAsync();
-{{InterfaceMethods}}
-    }
-
     public class {{RepositoryName}} : {{InterfaceName}}
     {
         private readonly GenericRepository<{{EntityName}}> _repo;
@@ -33,12 +25,21 @@ namespace {{RepositoryNamespace}}
             return _repo.UpdateAsync(entity, includeProperties);
         }
 
-        public async Task<IEnumerable<{{EntityName}}>> GetAllAsync()
+        public Task<IEnumerable<{{EntityName}}>> GetAllAsync(params Expression<Func<{{EntityName}}, object>>[]? selectProperties) {
+            return _repo.GetAllAsync(selectProperties);
+        }
+            
+
+        public Task<{{EntityName}}?> GetByIdAsync({{PKParameters}}{{EntityParameter}}{{SelectPropertiesParameter}}) 
         {
-            var entities = await _repo.GetAllAsync();
-            return entities;
+            {{PKInitializer}}{{EntityInitFallback}}
+            return _repo.GetByIdAsync(entity, selectProperties);
         }
 
-{{ClassMethods}}
+        public Task<int> Delete{{DeleteSuffix}}({{PKParameters}}{{EntityParameter}})
+        {
+            {{PKInitializer}}{{EntityInitFallback}}
+            return _repo.DeleteAsync(entity);
+        }
     }
 }

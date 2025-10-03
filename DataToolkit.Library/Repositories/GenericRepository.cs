@@ -56,7 +56,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         _typeMapCache[typeof(T)] = true;
     }
 
-    
+    /*
     public async Task<IEnumerable<T>> GetAllAsync()
     {
         string query = $"SELECT * FROM {_meta.TableName}";
@@ -65,7 +65,34 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
         return list;
     }
+    */
+    public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[]? selectProperties)
+    {
+        string columns;
 
+        if (selectProperties != null && selectProperties.Length > 0)
+        {
+            var selectedProps = selectProperties
+                .SelectMany(p => EntityMetadataHelper.GetPropertiesFromExpression(p))
+                .ToList();
+
+            columns = string.Join(", ", selectedProps.Select(p =>
+            {
+                var propMeta = _meta.Properties.Single(pr => pr.Name == p);
+                return _meta.ColumnMappings[propMeta];
+            }));
+        }
+        else
+        {
+            columns = "*";
+        }
+
+        string query = $"SELECT {columns} FROM {_meta.TableName}";
+        var list = (await _connection.QueryAsync<T>(query, transaction: _transaction)).ToList();
+        return list;
+    }
+
+    /*
     public async Task<T?> GetByIdAsync(T entity)
     {
         string whereClause = string.Join(" AND ",
@@ -74,6 +101,35 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         string query = $"SELECT * FROM {_meta.TableName} WHERE {whereClause}";
         return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
     }
+    */
+    public async Task<T?> GetByIdAsync(T entity, params Expression<Func<T, object>>[]? selectProperties)
+    {
+        string columns;
+
+        if (selectProperties != null && selectProperties.Length > 0)
+        {
+            var selectedProps = selectProperties
+                .SelectMany(p => EntityMetadataHelper.GetPropertiesFromExpression(p))
+                .ToList();
+
+            columns = string.Join(", ", selectedProps.Select(p =>
+            {
+                var propMeta = _meta.Properties.Single(pr => pr.Name == p);
+                return _meta.ColumnMappings[propMeta];
+            }));
+        }
+        else
+        {
+            columns = "*";
+        }
+
+        string whereClause = string.Join(" AND ",
+            _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
+
+        string query = $"SELECT {columns} FROM {_meta.TableName} WHERE {whereClause}";
+        return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
+    }
+
 
     public async Task<int> UpdateAsync(T entity, params Expression<Func<T, object>>[] includeProperties)
     {

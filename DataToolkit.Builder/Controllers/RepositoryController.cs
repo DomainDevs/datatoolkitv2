@@ -3,9 +3,8 @@ using DataToolkit.Builder.Services;
 using DataToolkit.Builder.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
-using System.Text;
-using System.Linq.Expressions;
 using System.Globalization;
+using System.Linq.Expressions;
 
 namespace DataToolkit.Builder.Controllers;
 
@@ -20,10 +19,6 @@ public class RepositoryController : ControllerBase
         _scriptExtractionService = scriptExtractionService;
     }
 
-    /// <summary>
-    /// Genera el código del repository usando la metadata real de la tabla (incluyendo llaves).
-    /// Request debe traer schema y tableName.
-    /// </summary>
     [HttpPost("generate/generic")]
     public async Task<IActionResult> GenerateRepository([FromBody] RepositoryRequest request)
     {
@@ -35,147 +30,116 @@ public class RepositoryController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        // Definición de nombres
-        var entityNamespace = string.IsNullOrWhiteSpace(request.EntityNamespace)
-            ? "Domain.Entities"
-            : request.EntityNamespace;
-
-        var repositoryNamespace = string.IsNullOrWhiteSpace(request.RepositoryNamespace)
-            ? "Persistence.Repositories"
-            : request.RepositoryNamespace;
+        var entityNamespace = string.IsNullOrWhiteSpace(request.EntityNamespace) ? "Domain.Entities" : request.EntityNamespace;
+        var repositoryNamespace = string.IsNullOrWhiteSpace(request.RepositoryNamespace) ? "Persistence.Repositories" : request.RepositoryNamespace;
 
         var entityName = ToPascalCase(table.Name);
         var repositoryName = $"{entityName}Repository";
         var interfaceName = $"I{entityName}Repository";
 
-        // Generar métodos dinámicos según PK
         var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
-        string interfaceMethods;
-        string classMethods;
 
-        if (!pkColumns.Any())
+        // Construir variables de reemplazo para plantilla
+        string pkParameters = pkColumns.Any() ? BuildParameterList(pkColumns) : "";
+        string entityParameter = pkColumns.Any() ? "" : $"{entityName} entity";
+        string selectPropertiesParameter = $", params Expression<Func<{entityName}, object>>[]? selectProperties";
+        string pkInitializer = pkColumns.Any() ? BuildEntityInitializer(entityName, pkColumns) : "";
+        string entityInitFallback = pkColumns.Any() ? "" : "var entity = entity;";
+
+        var replacements = new Dictionary<string, string>
         {
-            // Sin PK: DeleteAsync y GetByIdAsync por entidad
-            interfaceMethods = $@"
-        Task<int> DeleteAsync({entityName} entity);
-        Task<{entityName}?> GetByIdAsync({entityName} entity);";
+            ["{{EntityNamespace}}"] = entityNamespace,
+            ["{{RepositoryNamespace}}"] = repositoryNamespace,
+            ["{{EntityName}}"] = entityName,
+            ["{{RepositoryName}}"] = repositoryName,
+            ["{{InterfaceName}}"] = interfaceName,
+            ["{{PKParameters}}"] = pkParameters,
+            ["{{EntityParameter}}"] = string.IsNullOrWhiteSpace(entityParameter) ? "" : entityParameter,
+            ["{{SelectPropertiesParameter}}"] = selectPropertiesParameter,
+            ["{{PKInitializer}}"] = pkInitializer,
+            ["{{EntityInitFallback}}"] = entityInitFallback,
+            ["{{DeleteSuffix}}"] = pkColumns.Any() ? "ByIdAsync" : ""
+        };
 
-            classMethods = $@"
-        public Task<int> DeleteAsync({entityName} entity)
-        {{
-            return _repo.DeleteAsync(entity);
-        }}
+        string ProcessTemplate(string template) =>
+            replacements.Aggregate(template, (current, kv) => current.Replace(kv.Key, kv.Value));
 
-        public Task<{entityName}?> GetByIdAsync({entityName} entity)
-        {{
-            return _repo.GetByIdAsync(entity);
-        }}";
-        }
-        else
+        var repoTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repository", "GenericRepository.tpl");
+        var ifaceTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repository", "GenericInterface.tpl");
+
+        if (!System.IO.File.Exists(repoTemplatePath) || !System.IO.File.Exists(ifaceTemplatePath))
+            return NotFound("No se encontraron las plantillas requeridas.");
+
+        var repoTemplate = await System.IO.File.ReadAllTextAsync(repoTemplatePath);
+        var ifaceTemplate = await System.IO.File.ReadAllTextAsync(ifaceTemplatePath);
+
+        var repositoryCode = ProcessTemplate(repoTemplate);
+        var interfaceCode = ProcessTemplate(ifaceTemplate);
+
+        if (!request.AsZip)
         {
-            // Con PK: métodos con parámetros
-            var paramList = BuildParameterList(pkColumns);
-            var initObject = BuildEntityInitializer(entityName, pkColumns);
-
-            interfaceMethods = $@"
-        Task<int> DeleteByIdAsync({paramList});
-        Task<{entityName}?> GetByIdAsync({paramList});";
-
-            classMethods = $@"
-        public async Task<int> DeleteByIdAsync({paramList})
-        {{
-            {initObject}
-            return await _repo.DeleteAsync(entity);
-        }}
-
-        public Task<{entityName}?> GetByIdAsync({paramList})
-        {{
-            {initObject}
-            return _repo.GetByIdAsync(entity);
-        }}";
+            return Content(repositoryCode + Environment.NewLine + Environment.NewLine + interfaceCode, "text/plain");
         }
 
-        // Leer la plantilla
-        var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repository", "GenericRepository.tpl");
-        if (!System.IO.File.Exists(templatePath))
-            return NotFound("No se encontró la plantilla GenericRepository.tpl");
+        using var ms = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, true))
+        {
+            var repoEntry = archive.CreateEntry($"{repositoryName}.cs");
+            await using (var writer = new StreamWriter(repoEntry.Open()))
+                await writer.WriteAsync(repositoryCode);
 
-        var template = await System.IO.File.ReadAllTextAsync(templatePath);
+            var ifaceEntry = archive.CreateEntry($"{interfaceName}.cs");
+            await using (var writer = new StreamWriter(ifaceEntry.Open()))
+                await writer.WriteAsync(interfaceCode);
+        }
 
-        // Reemplazar placeholders
-        var output = template
-            .Replace("{{EntityNamespace}}", entityNamespace)
-            .Replace("{{RepositoryNamespace}}", repositoryNamespace)
-            .Replace("{{EntityName}}", entityName)
-            .Replace("{{RepositoryName}}", repositoryName)
-            .Replace("{{InterfaceName}}", interfaceName)
-            .Replace("{{InterfaceMethods}}", interfaceMethods)
-            .Replace("{{ClassMethods}}", classMethods);
-
-        return Content(output, "text/plain");
+        ms.Position = 0;
+        return File(ms.ToArray(), "application/zip", $"{entityName}_Repository.zip");
     }
 
-
-    // -------------------------
-    // Helpers para generación
-    // -------------------------
     private static string BuildParameterList(IEnumerable<DbColumn> pkColumns)
     {
-        // Produce: "int codSuc, int codRamo, long nroPol" ... usando SqlTypeMapper para los CLR types
-        var parts = new List<string>();
-        foreach (var col in pkColumns)
+        return string.Join(", ", pkColumns.Select(c =>
         {
-            var (clrType, _) = SqlTypeMapper.ConvertToClrType(col.SqlType, col.Precision, col.Scale, col.Length, col.IsNullable);
-            var propName = ToPascalCase(col.Name);
-            var varName = ToCamelCase(propName);
-            parts.Add($"{clrType} {varName}");
-        }
-        return string.Join(", ", parts);
+            var (clrType, _) = SqlTypeMapper.ConvertToClrType(c.SqlType, c.Precision, c.Scale, c.Length, c.IsNullable);
+            var varName = ToCamelCase(ToPascalCase(c.Name));
+            return $"{clrType} {varName}";
+        }));
     }
 
     private static string BuildEntityInitializer(string entityName, IEnumerable<DbColumn> pkColumns)
     {
-        // Produce: "var entity = new MyEntity { CodSuc = codSuc, CodRamo = codRamo, ... };"
-        var assignments = pkColumns.Select(col =>
+        var assignments = string.Join(", ", pkColumns.Select(c =>
         {
-            var propName = ToPascalCase(col.Name);
+            var propName = ToPascalCase(c.Name);
             var varName = ToCamelCase(propName);
             return $"{propName} = {varName}";
-        });
-        var assignJoined = string.Join(", ", assignments);
-        return $"var entity = new {entityName} {{ {assignJoined} }};";
+        }));
+        return $"var entity = new {entityName} {{ {assignments} }};";
     }
 
     private static string ToPascalCase(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return name;
         var parts = name.Split(new[] { '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < parts.Length; i++)
-            parts[i] = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(parts[i].ToLower());
-        return string.Join("", parts);
+        return string.Join("", parts.Select(p => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(p.ToLower())));
     }
 
     private static string ToCamelCase(string pascal)
     {
         if (string.IsNullOrEmpty(pascal)) return pascal;
-        if (pascal.Length == 1) return pascal.ToLower();
         return char.ToLowerInvariant(pascal[0]) + pascal.Substring(1);
     }
 }
 
-// Clase para recibir la petición
 public class RepositoryRequest
 {
-    // Ahora esperamos TableName & Schema (en lugar de EntityName)
     public string TableName { get; set; } = string.Empty;
-
     [DefaultValue("dbo")]
     public string Schema { get; set; } = "dbo";
-
     [DefaultValue("Domain.Entities")]
     public string EntityNamespace { get; set; } = "Domain.Entities";
-
     [DefaultValue("Persistence.Repositories")]
     public string? RepositoryNamespace { get; set; } = "Persistence.Repositories";
+    public bool AsZip { get; set; } = false;
 }
- 
