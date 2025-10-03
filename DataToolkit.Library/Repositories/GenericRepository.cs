@@ -56,16 +56,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         _typeMapCache[typeof(T)] = true;
     }
 
-    /*
-    public async Task<IEnumerable<T>> GetAllAsync()
-    {
-        string query = $"SELECT * FROM {_meta.TableName}";
-        //return await _connection.QueryAsync<T>(query, transaction: _transaction); //sin materializar
-        var list = (await _connection.QueryAsync<T>(query, transaction: _transaction)).ToList(); // 👇 Forzar materialización para poder verlos bien en el debugger
-
-        return list;
-    }
-    */
     public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[]? selectProperties)
     {
         string columns;
@@ -92,16 +82,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return list;
     }
 
-    /*
-    public async Task<T?> GetByIdAsync(T entity)
-    {
-        string whereClause = string.Join(" AND ",
-            _meta.KeyProperties.Select(p => $"{_meta.ColumnMappings[p]} = @{p.Name}"));
-
-        string query = $"SELECT * FROM {_meta.TableName} WHERE {whereClause}";
-        return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
-    }
-    */
     public async Task<T?> GetByIdAsync(T entity, params Expression<Func<T, object>>[]? selectProperties)
     {
         string columns;
@@ -129,7 +109,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         string query = $"SELECT {columns} FROM {_meta.TableName} WHERE {whereClause}";
         return await _connection.QueryFirstOrDefaultAsync<T>(query, entity, _transaction);
     }
-
 
     public async Task<int> UpdateAsync(T entity, params Expression<Func<T, object>>[] includeProperties)
     {
