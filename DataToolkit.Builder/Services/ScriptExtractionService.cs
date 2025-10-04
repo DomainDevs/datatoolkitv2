@@ -1,4 +1,5 @@
-﻿using DataToolkit.Builder.Helpers;
+﻿using Dapper;
+using DataToolkit.Builder.Helpers;
 using DataToolkit.Builder.Models;
 using DataToolkit.Library.Connections;
 using DataToolkit.Library.Sql;
@@ -349,6 +350,44 @@ public class ScriptExtractionService
         return dbTable;
     }
 
+
+    public async Task<IEnumerable<StoredProcedureParameter>> ExtractStoredProcedureMetadataAsync(
+        string schema, string storedName, CancellationToken cancellationToken = default)
+    {
+        const string sql = @"
+        SELECT 
+            p.name AS ParameterName,
+            t.name AS SqlType,
+            CASE 
+                WHEN t.name IN ('nchar','nvarchar') AND p.max_length > 0 THEN p.max_length / 2
+                ELSE p.max_length
+            END AS Length,
+            p.precision AS Precision,
+            p.scale AS Scale,
+            p.is_output AS IsOutput,
+            0 AS HasDefaultValue, -- fallback (compatibilidad)
+            CASE 
+                WHEN p.is_output = 1 THEN 1 
+                ELSE 0 
+            END AS IsNullable
+        FROM sys.parameters p
+        INNER JOIN sys.types t ON p.user_type_id = t.user_type_id
+        INNER JOIN sys.objects o ON p.object_id = o.object_id
+        WHERE o.type = 'P'
+          AND o.name = @storedName
+          AND SCHEMA_NAME(o.schema_id) = @schema
+        ORDER BY p.parameter_id;
+    ";
+
+        if (!_connectionManager.IsConnected())
+            return Enumerable.Empty<StoredProcedureParameter>();
+
+        using var sqlExecutor = new SqlExecutor(_connectionManager.GetConnection());
+        var result = await sqlExecutor.FromSqlAsync<StoredProcedureParameter>(sql, new { schema, storedName });
+
+        return result;
+    }
+
 }
 
 public class ColumnDefinitionResult
@@ -382,4 +421,29 @@ public class ForeignKeyResult
     public string ParentColumn { get; set; } = "";
     public string ReferencedTable { get; set; } = "";
     public string ReferencedColumn { get; set; } = "";
+}
+
+public class DbParameterResult
+{
+    public string ParameterName { get; set; } = string.Empty;
+    public string SqlType { get; set; } = string.Empty;
+    public short Length { get; set; }
+    public byte Precision { get; set; }
+    public byte Scale { get; set; }
+    public bool IsOutput { get; set; }
+    public bool HasDefaultValue { get; set; }
+    public bool IsNullable { get; set; }
+}
+
+
+public class StoredProcedureParameter
+{
+    public string ParameterName { get; set; }
+    public string SqlType { get; set; }
+    public int Length { get; set; }
+    public byte Precision { get; set; }
+    public byte Scale { get; set; }
+    public bool IsOutput { get; set; }
+    public bool HasDefaultValue { get; set; }
+    public bool IsNullable { get; set; }
 }

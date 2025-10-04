@@ -18,4 +18,9 @@
     <ProjectReference Include="..\DataToolkit.Library\DataToolkit.Library.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Templates\Entity\" />
+    <Folder Include="Templates\Mapper\" />
+  </ItemGroup>
+
 </Project>

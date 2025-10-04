@@ -64,8 +64,8 @@ public class RepositoryController : ControllerBase
         string ProcessTemplate(string template) =>
             replacements.Aggregate(template, (current, kv) => current.Replace(kv.Key, kv.Value));
 
-        var repoTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repository", "GenericRepository.tpl");
-        var ifaceTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repository", "GenericInterface.tpl");
+        var repoTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repositories", "GenericRepository.tpl");
+        var ifaceTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Repositories", "GenericInterface.tpl");
 
         if (!System.IO.File.Exists(repoTemplatePath) || !System.IO.File.Exists(ifaceTemplatePath))
             return NotFound("No se encontraron las plantillas requeridas.");
