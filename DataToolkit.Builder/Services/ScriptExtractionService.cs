@@ -447,3 +447,4 @@ public class StoredProcedureParameter
     public bool HasDefaultValue { get; set; }
     public bool IsNullable { get; set; }
 }
+
