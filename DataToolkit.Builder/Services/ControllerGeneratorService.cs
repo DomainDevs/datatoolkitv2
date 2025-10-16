@@ -72,51 +72,76 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine();
 
             // GetAll
+            sb.AppendLine("    // =====================================");
+            sb.AppendLine($"    // GET: api/{entityName}");
+            sb.AppendLine("    // =====================================");
             sb.AppendLine("    [HttpGet]");
+            sb.AppendLine($"    [ProducesResponseType(typeof(ResponseDTO<IEnumerable<{entityName}QueryResponseDto>>), StatusCodes.Status200OK)]");
             sb.AppendLine("    public async Task<IActionResult> GetAll()");
             sb.AppendLine("    {");
             sb.AppendLine($"        var list = await _mediator.Send(new {queryAll}());");
-            sb.AppendLine("        return Ok(list);");
+            sb.AppendLine("        return Ok(ApiResponse.Success(list, \"Consulta exitosa\"));");
             sb.AppendLine("    }");
             sb.AppendLine();
 
             // GetById
+            sb.AppendLine("    // =====================================");
+            sb.AppendLine($"    // GET: api/{entityName}/{pkRoute}");
+            sb.AppendLine("    // =====================================");
             sb.AppendLine($"    [HttpGet(\"{pkRoute}\")]");
+            sb.AppendLine($"    [ProducesResponseType(typeof(ResponseDTO<IEnumerable<{entityName}QueryResponseDto>>), StatusCodes.Status200OK)]");
             sb.AppendLine($"    public async Task<IActionResult> GetById({pkParams})");
             sb.AppendLine("    {");
             sb.AppendLine($"        var item = await _mediator.Send(new {queryById}({pkArgs}));");
-            sb.AppendLine("        if (item == null) return NotFound();");
-            sb.AppendLine("        return Ok(item);");
+            sb.AppendLine("        if (item == null) return NotFound(ApiResponse.Fail<object>(\"Registro no encontrado\"));");
+            sb.AppendLine("        return Ok(ApiResponse.Success(item, \"Registro encontrado\"));");
             sb.AppendLine("    }");
             sb.AppendLine();
 
             // Create
+            sb.AppendLine("    // =====================================");
+            sb.AppendLine($"    // POST: api/{entityName}");
+            sb.AppendLine("    // =====================================");
             sb.AppendLine("    [HttpPost]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status201Created)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status400BadRequest)]");
             sb.AppendLine($"    public async Task<IActionResult> Create([FromBody] {entityName}Create{requestDto} dto)");
             sb.AppendLine("    {");
-            sb.AppendLine("        if (!ModelState.IsValid) return BadRequest(ModelState);");
+            sb.AppendLine("        if (!ModelState.IsValid) { ");
+            sb.AppendLine("         var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(); ");
+            sb.AppendLine("         return BadRequest(ApiResponse.Fail(\"Error de validación\", errors)); ");
+            sb.AppendLine("        } ");
             sb.AppendLine($"        var command = dto.ToCommandCreate();");
             sb.AppendLine("        var result = await _mediator.Send(command);");
 
             if (pkColumns.Count == 1)
             {
                 var pkName = pkColumns[0].Name.ToLower();
-                sb.AppendLine($"        return CreatedAtAction(nameof(GetById), new {{ {pkName} = result }}, result);");
+                sb.AppendLine($"        return CreatedAtAction(nameof(GetById), new {{ {pkName} = result }}, ApiResponse.Success(result, \"Registro creado correctamente\"));");
             }
             else
             {
                 sb.AppendLine("        // Para PK compuestos se asume que el handler devuelve un objeto con todas las claves");
-                sb.AppendLine("        return CreatedAtAction(nameof(GetById), result, result);");
+                sb.AppendLine("        return CreatedAtAction(nameof(GetById), result, ApiResponse.Success(result, \"Registro creado correctamente\"));");
             }
 
             sb.AppendLine("    }");
             sb.AppendLine();
 
             // Update
+            sb.AppendLine("    // =====================================");
+            sb.AppendLine($"    // PUT: api/{entityName}/{pkRoute}");
+            sb.AppendLine("    // =====================================");
             sb.AppendLine($"    [HttpPut(\"{pkRoute}\")]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status200OK)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status400BadRequest)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status404NotFound)]");
             sb.AppendLine($"    public async Task<IActionResult> Update({pkParams}, [FromBody] {entityName}Update{requestDto} dto)");
             sb.AppendLine("    {");
-            sb.AppendLine("        if (!ModelState.IsValid) return BadRequest(ModelState);");
+            sb.AppendLine("        if (!ModelState.IsValid) {");
+            sb.AppendLine("         var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();");
+            sb.AppendLine("         return BadRequest(ApiResponse.Fail(\"Error de validación\", errors));");
+            sb.AppendLine("        }");
             sb.AppendLine();
             sb.AppendLine("        //Inyección de llaves");
             foreach (var pk in pkColumns)
@@ -128,16 +153,21 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine();
             sb.AppendLine($"        var command = dto.ToUpdateCommand();");
             sb.AppendLine("        var result = await _mediator.Send(command);");
-            sb.AppendLine("        return result == 0 ? NotFound() : NoContent();");
+            sb.AppendLine("        return result == 0 ? NotFound(ApiResponse.Fail<object>(\"Registro no encontrado\")) : Ok(ApiResponse.Success(result, \"Registro actualizado correctamente\"));");
             sb.AppendLine("    }");
             sb.AppendLine();
 
             // Delete
+            sb.AppendLine("    // =====================================");
+            sb.AppendLine($"    // DELETE: api/{entityName}/{pkRoute}");
+            sb.AppendLine("    // =====================================");
             sb.AppendLine($"    [HttpDelete(\"{pkRoute}\")]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status200OK)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status404NotFound)]");
             sb.AppendLine($"    public async Task<IActionResult> Delete({pkParams})");
             sb.AppendLine("    {");
             sb.AppendLine($"        var deleted = await _mediator.Send(new {commandDelete}({pkArgs}));");
-            sb.AppendLine("        return !deleted ? NotFound() : NoContent();");
+            sb.AppendLine("        return !deleted ? NotFound(ApiResponse.Fail<object>(\"Registro no encontrado\")) : Ok(ApiResponse.Success(true, \"Registro eliminado correctamente\"));");
             sb.AppendLine("    }");
 
             sb.AppendLine("}");
