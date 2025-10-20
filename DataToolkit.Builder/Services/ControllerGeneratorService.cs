@@ -3,6 +3,7 @@ using System.Linq;
 using DataToolkit.Builder.Helpers;
 using DataToolkit.Builder.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace DataToolkit.Builder.Services
 {
@@ -67,8 +68,14 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"public class {controllerName} : ControllerBase");
             sb.AppendLine("{");
             sb.AppendLine("    private readonly IMediator _mediator;");
+            //sb.AppendLine($"    private readonly ILogger<{controllerName}> _logger;");
             sb.AppendLine();
-            sb.AppendLine($"    public {controllerName}(IMediator mediator) => _mediator = mediator;");
+            //sb.AppendLine($"    public {controllerName}(IMediator mediator, ILogger<{controllerName}> logger)");
+            sb.AppendLine($"    public {controllerName}(IMediator mediator)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        _mediator = mediator;");
+            //sb.AppendLine("        _logger = logger;");
+            sb.AppendLine("    }");
             sb.AppendLine();
 
             // GetAll
@@ -113,6 +120,12 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("        } ");
             sb.AppendLine($"        var command = dto.ToCommandCreate();");
             sb.AppendLine("        var result = await _mediator.Send(command);");
+            sb.AppendLine();
+            sb.AppendLine("        if (result == 0)");
+            sb.AppendLine("        {");
+            //sb.AppendLine($"        _logger.LogWarning(\"No se pudo insertar el registro {entityName}: {{@dto}}\", dto);");
+            sb.AppendLine($"        return BadRequest(ApiResponse.Fail<object>(\"No se pudo insertar el registro\"));");
+            sb.AppendLine("        }");
 
             if (pkColumns.Count == 1)
             {
@@ -153,7 +166,12 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine();
             sb.AppendLine($"        var command = dto.ToUpdateCommand();");
             sb.AppendLine("        var result = await _mediator.Send(command);");
-            sb.AppendLine("        return result == 0 ? NotFound(ApiResponse.Fail<object>(\"Registro no encontrado\")) : Ok(ApiResponse.Success(result, \"Registro actualizado correctamente\"));");
+            sb.AppendLine("        if (result == 0)");
+            sb.AppendLine("        {");
+            //sb.AppendLine($"        _logger.LogWarning(\"Intento de actualización fallido: {{@dto}}\", dto);");
+            sb.AppendLine($"        return NotFound(ApiResponse.Fail<object>(\"Registro no encontrado para actualización\"));");
+            sb.AppendLine("        }");
+            sb.AppendLine("        return Ok(ApiResponse.Success(result, \"Registro actualizado correctamente\"));");
             sb.AppendLine("    }");
             sb.AppendLine();
 
@@ -167,7 +185,11 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine($"    public async Task<IActionResult> Delete({pkParams})");
             sb.AppendLine("    {");
             sb.AppendLine($"        var deleted = await _mediator.Send(new {commandDelete}({pkArgs}));");
-            sb.AppendLine("        return !deleted ? NotFound(ApiResponse.Fail<object>(\"Registro no encontrado\")) : Ok(ApiResponse.Success(true, \"Registro eliminado correctamente\"));");
+            sb.AppendLine("        if (!deleted)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return NotFound(ApiResponse.Fail<object>(\"Registro no encontrado para eliminación\"));");
+            sb.AppendLine("        }");
+            sb.AppendLine("        return Ok(ApiResponse.Success<object>(null, \"Registro eliminado correctamente\"));");
             sb.AppendLine("    }");
 
             sb.AppendLine("}");
