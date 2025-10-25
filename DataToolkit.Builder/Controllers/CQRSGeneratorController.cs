@@ -152,4 +152,6 @@ public class CQRSRequest
 
     // Nuevo: concepto de dominio (Ej: Clientes)
     public string DomainName { get; set; } = string.Empty;
+
+    public bool AsZip { get; set; } = false;
 }
