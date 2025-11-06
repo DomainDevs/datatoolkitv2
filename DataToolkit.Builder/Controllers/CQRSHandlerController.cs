@@ -10,11 +10,11 @@ namespace DataToolkit.Builder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class CQRSGeneratorController : ControllerBase
+public class CQRSHandlerController : ControllerBase
 {
     private readonly ScriptExtractionService _scriptExtractionService;
 
-    public CQRSGeneratorController(ScriptExtractionService scriptExtractionService)
+    public CQRSHandlerController(ScriptExtractionService scriptExtractionService)
     {
         _scriptExtractionService = scriptExtractionService;
     }
@@ -36,7 +36,7 @@ public class CQRSGeneratorController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateCreateCode(table, request.DomainName);
+        var code = CQRSGeneratorHandler.GenerateCreateCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -57,7 +57,7 @@ public class CQRSGeneratorController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateUpdateCode(table, request.DomainName);
+        var code = CQRSGeneratorHandler.GenerateUpdateCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -78,7 +78,7 @@ public class CQRSGeneratorController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateDeleteCode(table, request.DomainName);
+        var code = CQRSGeneratorHandler.GenerateDeleteCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -99,7 +99,7 @@ public class CQRSGeneratorController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateQueryCode(table, request.DomainName);
+        var code = CQRSGeneratorHandler.GenerateQueryCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -120,7 +120,7 @@ public class CQRSGeneratorController : ControllerBase
         if (table == null)
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
-        var code = CQRSGenerator.GenerateQueryAllCode(table, request.DomainName);
+        var code = CQRSGeneratorHandler.GenerateQueryAllCode(table, request.DomainName);
         return Content(code, "text/plain");
     }
 
@@ -144,14 +144,4 @@ public class CQRSGeneratorController : ControllerBase
     }
 }
 
-// Clase para recibir la petición
-public class CQRSRequest
-{
-    public string TableName { get; set; } = string.Empty;
-    public string Schema { get; set; } = "dbo";
 
-    // Nuevo: concepto de dominio (Ej: Clientes)
-    public string DomainName { get; set; } = string.Empty;
-
-    public bool AsZip { get; set; } = false;
-}

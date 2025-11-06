@@ -6,7 +6,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace DataToolkit.Builder.Services
 {
-    public static class CQRSGenerator
+    public static class CQRSGeneratorHandler
     {
         public static string GenerateCreateCode(DbTable table, string domainName)
         {
@@ -18,18 +18,6 @@ namespace DataToolkit.Builder.Services
             var responseDto = $"{entityName}ResponseDto";
 
             var sb = new StringBuilder();
-
-            // -------------------------
-            // Command
-            // -------------------------
-            sb.AppendLine($"// {commandName}.cs");
-            sb.AppendLine("using MediatR;");
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands;");
-            sb.AppendLine();
-            sb.Append($"public record {commandName}(");
-            sb.Append(string.Join(", ", table.Columns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
-            sb.AppendLine(") : IRequest<int>;");
-            sb.AppendLine();
 
             // -------------------------
             // Handler
@@ -72,19 +60,6 @@ namespace DataToolkit.Builder.Services
             var nonPkColumns = table.Columns.Where(c => !c.IsPrimaryKey).ToList();
 
             // -------------------------
-            // Command
-            // -------------------------
-            sb.AppendLine($"// {commandName}.cs");
-            sb.AppendLine("using MediatR;");
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands;");
-            sb.AppendLine();
-            sb.Append($"public record {commandName}(");
-            sb.Append(string.Join(", ", pkColumns.Concat(nonPkColumns)
-                .Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
-            sb.AppendLine(") : IRequest<int>;");
-            sb.AppendLine();
-
-            // -------------------------
             // Handler
             // -------------------------
             sb.AppendLine($"// {handlerName}.cs");
@@ -123,16 +98,6 @@ namespace DataToolkit.Builder.Services
             var sb = new StringBuilder();
 
             // -------------------------
-            // Command
-            // -------------------------
-            sb.AppendLine($"// {commandName}.cs");
-            sb.AppendLine("using MediatR;");
-            sb.AppendLine($"namespace Application.Features.{domain}.Commands;");
-            sb.AppendLine();
-            sb.AppendLine($"public record {commandName}({string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}"))}) : IRequest<bool>;");
-            sb.AppendLine();
-
-            // -------------------------
             // Handler
             // -------------------------
             sb.AppendLine($"// {handlerName}.cs");
@@ -165,18 +130,6 @@ namespace DataToolkit.Builder.Services
             var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
 
             var sb = new StringBuilder();
-
-            // Query
-            sb.AppendLine($"// {queryName}.cs");
-            sb.AppendLine("using MediatR;");
-            sb.AppendLine($"using Application.Features.{domain}.DTOs;");
-            sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Queries;");
-            sb.AppendLine();
-            sb.Append($"public record {queryName}(");
-            sb.Append(string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}")));
-            sb.AppendLine($") : IRequest<{responseDto}?>;");
-            sb.AppendLine();
 
             // Handler
             sb.AppendLine($"// {handlerName}.cs");
@@ -215,16 +168,6 @@ namespace DataToolkit.Builder.Services
             var responseDto = $"{entityName}QueryResponseDto";
 
             var sb = new StringBuilder();
-
-            // QueryAll
-            sb.AppendLine($"// {queryName}.cs");
-            sb.AppendLine("using MediatR;");
-            sb.AppendLine($"using Application.Features.{domain}.DTOs;");
-            sb.AppendLine();
-            sb.AppendLine($"namespace Application.Features.{domain}.Queries;");
-            sb.AppendLine();
-            sb.AppendLine($"public record {queryName}() : IRequest<IEnumerable<{responseDto}>>;");
-            sb.AppendLine();
 
             // Handler
             sb.AppendLine($"// {handlerName}.cs");
