@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DataToolkit.Cli")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b9d7bdf1d1ff7473ed9e5e17cd443d88338a8abf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9761b5cd9ed72b23162cfdb1354ef7c631965395")]
 [assembly: System.Reflection.AssemblyProductAttribute("DataToolkit.Cli")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DataToolkit.Cli")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

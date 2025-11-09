@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using DataToolkit.Builder.Models;
-using System.Linq;
 
 public static class MapperGenerator
 {
@@ -8,7 +7,7 @@ public static class MapperGenerator
     /// Genera el código del mapper usando la metadata de la tabla (DbTable) y el domainName.
     /// Si useMapperly = true genera el mapper parcial para Riok.Mapperly; si no, genera mapper manual.
     /// </summary>
-    public static string Generate(DbTable table, string domainName, bool useMapperly)
+    public static string Generate(DbTable table, string domainName, bool useMapperly, bool useCQRS)
     {
         var entityName = ToPascalCase(table.Name);            // e.g. PvHeader
         var domain = ToPascalCase(domainName);                // e.g. Polizas
@@ -16,7 +15,7 @@ public static class MapperGenerator
         var responseDtoName = entityName + "ResponseDto";
 
         if (useMapperly)
-            return GenerateMapperly(domain, entityName, requestDtoName, responseDtoName);
+            return GenerateMapperly(domain, entityName, requestDtoName, responseDtoName, useCQRS);
 
         return GenerateManual(domain, entityName, requestDtoName, responseDtoName, table);
     }
@@ -71,7 +70,7 @@ public static class MapperGenerator
     }
 
     // Mapperly partial mapper
-    private static string GenerateMapperly(string domain, string entityName, string requestDto, string responseDto)
+    private static string GenerateMapperly(string domain, string entityName, string requestDto, string responseDto, bool useCQRS = false)
     {
         var sb = new StringBuilder();
 
@@ -81,27 +80,44 @@ public static class MapperGenerator
         sb.AppendLine("// =========================================================");
         sb.AppendLine();
         sb.AppendLine($"using Application.Features.{domain}.DTOs;");
-        sb.AppendLine($"using Application.Features.{domain}.Commands;");
+        if (useCQRS)
+            sb.AppendLine($"using Application.Features.{domain}.Commands;");
         sb.AppendLine("using Riok.Mapperly.Abstractions;");
         sb.AppendLine("using Entities = Domain.Entities;");
         sb.AppendLine();
         sb.AppendLine($"namespace Application.Features.{domain}.Mappers;");
         sb.AppendLine();
-        //sb.AppendLine("[Mapper]");
+
         sb.AppendLine("[Mapper(AllowNullPropertyAssignment = true, RequiredMappingStrategy = RequiredMappingStrategy.None)]");
         sb.AppendLine($"public static partial class {entityName}Mapper");
         sb.AppendLine("{");
-        sb.AppendLine($"    // DTO → Commands");
-        sb.AppendLine($"    public static partial {entityName}UpdateCommand ToUpdateCommand(this {entityName}UpdateRequestDto dto);");
-        sb.AppendLine($"    public static partial {entityName}CreateCommand ToCommandCreate(this {entityName}CreateRequestDto dto);");
-        sb.AppendLine();
-        sb.AppendLine($"    // Commands → Entity");
-        sb.AppendLine($"    public static partial Entities.{entityName} ToEntity({entityName}CreateCommand command);");
-        sb.AppendLine($"    public static partial Entities.{entityName} ToEntity({entityName}UpdateCommand command);");
-        sb.AppendLine();
-        sb.AppendLine($"    // Entity → DTO");
-        sb.AppendLine($"    public static partial {entityName}QueryResponseDto ToDto(Entities.{entityName} entity);");
-        sb.AppendLine();
+
+        if (useCQRS)
+        {
+            sb.AppendLine($"    // DTO → Commands");
+            sb.AppendLine($"    public static partial {entityName}UpdateCommand ToUpdateCommand(this {entityName}UpdateRequestDto dto);");
+            sb.AppendLine($"    public static partial {entityName}CreateCommand ToCommandCreate(this {entityName}CreateRequestDto dto);");
+            sb.AppendLine();
+            sb.AppendLine($"    // Commands → Entity");
+            sb.AppendLine($"    public static partial Entities.{entityName} ToEntity({entityName}CreateCommand command);");
+            sb.AppendLine($"    public static partial Entities.{entityName} ToEntity({entityName}UpdateCommand command);");
+            sb.AppendLine();
+            sb.AppendLine($"    // Entity → DTO");
+            sb.AppendLine($"    public static partial {entityName}QueryResponseDto ToDto(Entities.{entityName} entity);");
+        }
+        else
+        {
+            // Direct DTO <-> Entity (service mode)
+            sb.AppendLine($"    // DTO -> Entity");
+            sb.AppendLine($"    public static partial Entities.{entityName} ToEntity({entityName}CreateRequestDto dto);");
+            sb.AppendLine($"    public static partial Entities.{entityName} ToEntity({entityName}UpdateRequestDto dto);");
+            sb.AppendLine();
+            sb.AppendLine($"    // Entity -> DTO");
+            sb.AppendLine($"    public static partial {entityName}QueryResponseDto ToDto(Entities.{entityName} entity);");
+        }
+
+
+            sb.AppendLine();
         sb.AppendLine("}");
 
         return sb.ToString();

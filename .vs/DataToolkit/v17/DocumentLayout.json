@@ -3,32 +3,8 @@
   "WorkspaceRootPath": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\cqrsvalidatorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\cqrsvalidatorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\cqrshandlercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\cqrshandlercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\controllers\\cqrscommandscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\controllers\\cqrscommandscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\cqrsgeneratorvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\cqrsgeneratorvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\cqrsgeneratorcommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\cqrsgeneratorcommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\cqrsgeneratorhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\cqrsgeneratorhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\models\\cqrsrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\models\\cqrsrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|c:\\devs\\core\\empresa\\library\\datatoolkitv2\\datatoolkit.builder\\services\\controllergeneratorservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BAA53BC2-5910-464D-811C-6C7A2A9D0EC5}|DataToolkit.Builder\\DataToolkit.Builder.csproj|solutionrelative:datatoolkit.builder\\services\\controllergeneratorservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -43,92 +19,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "CQRSValidatorController.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\CQRSValidatorController.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\CQRSValidatorController.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\CQRSValidatorController.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\CQRSValidatorController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAgwGQAAAAAAAAAAAAAAA==",
+              "Title": "ControllerGeneratorService.cs",
+              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\ControllerGeneratorService.cs",
+              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\ControllerGeneratorService.cs",
+              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\ControllerGeneratorService.cs",
+              "RelativeToolTip": "DataToolkit.Builder\\Services\\ControllerGeneratorService.cs",
+              "ViewState": "AgIAALkAAAAAAAAAAAAAANEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T14:26:13.546Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "CQRSGeneratorValidator.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\CQRSGeneratorValidator.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\CQRSGeneratorValidator.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\CQRSGeneratorValidator.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Services\\CQRSGeneratorValidator.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAQwKYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T14:20:50.585Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "CQRSGeneratorCommands.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\CQRSGeneratorCommands.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\CQRSGeneratorCommands.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\CQRSGeneratorCommands.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Services\\CQRSGeneratorCommands.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T11:49:29.917Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "CQRSGeneratorHandler.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\CQRSGeneratorHandler.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Services\\CQRSGeneratorHandler.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Services\\CQRSGeneratorHandler.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Services\\CQRSGeneratorHandler.cs",
-              "ViewState": "AgIAAKEAAAAAAAAAAAAQwNIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T11:37:51.541Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "CQRSRequest.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\CQRSRequest.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Models\\CQRSRequest.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Models\\CQRSRequest.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Models\\CQRSRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T11:36:46.37Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "CQRSCommandsController.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\CQRSCommandsController.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\CQRSCommandsController.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\CQRSCommandsController.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\CQRSCommandsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T11:35:34.739Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "CQRSHandlerController.cs",
-              "DocumentMoniker": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\CQRSHandlerController.cs",
-              "RelativeDocumentMoniker": "DataToolkit.Builder\\Controllers\\CQRSHandlerController.cs",
-              "ToolTip": "C:\\Devs\\Core\\Empresa\\Library\\datatoolkitv2\\DataToolkit.Builder\\Controllers\\CQRSHandlerController.cs",
-              "RelativeToolTip": "DataToolkit.Builder\\Controllers\\CQRSHandlerController.cs",
-              "ViewState": "AgIAAGMAAAAAAAAAAAAAAJMAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T11:29:07.795Z",
+              "WhenOpened": "2025-11-07T17:43:10.431Z",
               "EditorCaption": ""
             }
           ]

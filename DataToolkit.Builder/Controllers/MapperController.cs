@@ -34,7 +34,7 @@ public class MapperController : ControllerBase
             return NotFound($"No se encontró metadata para {schema}.{request.TableName}");
 
         // Generar mapper a partir de metadata + domainName
-        var mapperCode = MapperGenerator.Generate(table, request.DomainName, request.UseMapperly);
+        var mapperCode = MapperGenerator.Generate(table, request.DomainName, request.UseMapperly, request.useCQRS);
 
         return Content(mapperCode, "text/plain");
     }
