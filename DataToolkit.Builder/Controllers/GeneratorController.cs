@@ -18,9 +18,10 @@ public class GeneratorController : ControllerBase
     public async Task<IActionResult> GenerateController(
         string schema,
         string tableName,
-        string domainName)
+        string domainName,
+        bool useCqrs = false)
     {
-        var code = await _service.GenerateController(schema, tableName, domainName);
+        var code = await _service.GenerateController(schema, tableName, domainName, useCqrs);
 
         if (string.IsNullOrWhiteSpace(code))
             return NotFound($"No se pudo generar el controller para {schema}.{tableName}");

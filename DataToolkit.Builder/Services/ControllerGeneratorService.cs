@@ -3,7 +3,6 @@ using System.Linq;
 using DataToolkit.Builder.Helpers;
 using DataToolkit.Builder.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Components.Forms;
 
 namespace DataToolkit.Builder.Services
 {
@@ -16,7 +15,18 @@ namespace DataToolkit.Builder.Services
             _scriptExtractionService = scriptExtractionService;
         }
 
-        public async Task<string> GenerateController(string schema, string tableName, string domainName)
+        public async Task<string> GenerateController(string schema, string tableName, string domainName, bool useCqrs = true)
+        {
+            if (useCqrs)
+                return await GenerateControllerWithCqrs(schema, tableName, domainName);
+            else
+                return await GenerateControllerWithoutCqrs(schema, tableName, domainName);
+        }
+
+        // =========================================================
+        // 🟢 VERSIÓN ORIGINAL (CQRS)
+        // =========================================================
+        private async Task<string> GenerateControllerWithCqrs(string schema, string tableName, string domainName)
         {
             var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, tableName);
             if (table == null)
@@ -192,6 +202,156 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("        return Ok(ApiResponse.Success<object>(null, \"Registro eliminado correctamente\"));");
             sb.AppendLine("    }");
 
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        // =========================================================
+        // ⚪ NUEVA VERSIÓN SIN CQRS (SIN LAMBDAS, SIN ABREVIACIONES)
+        // =========================================================
+        private async Task<string> GenerateControllerWithoutCqrs(string schema, string tableName, string domainName)
+        {
+            var table = await _scriptExtractionService.ExtractTableMetadataAsync(schema, tableName);
+            if (table == null)
+            {
+                throw new InvalidOperationException($"No se encontró la tabla {schema}.{tableName}.");
+            }
+
+            var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
+            var entityName = ToPascalCase(table.Name);
+            var controllerName = $"{entityName}Controller";
+
+            var pkParams = string.Join(", ", pkColumns.Select(c =>
+            {
+                var (clrType, _) = SqlTypeMapper.ConvertToClrType(c.SqlType, c.Precision, c.Scale, c.Length, c.IsNullable);
+                return $"{clrType} {c.Name.ToLower()}";
+            }));
+
+            var pkRoute = string.Join("/", pkColumns.Select(c => $"{{{c.Name.ToLower()}}}"));
+            var pkArgs = string.Join(", ", pkColumns.Select(c => c.Name.ToLower()));
+
+            var sb = new StringBuilder();
+
+            // Namespaces
+            sb.AppendLine("using Microsoft.AspNetCore.Mvc;");
+            sb.AppendLine($"using Application.Features.{domainName}.DTOs;");
+            sb.AppendLine($"using Application.Features.{domainName}.Mappers;");
+            sb.AppendLine($"using Application.Features.{domainName}.Services;");
+            sb.AppendLine("using Shared.DTOs;");
+            sb.AppendLine("using Shared.Helpers;");
+            sb.AppendLine();
+            sb.AppendLine("namespace API.Controllers;");
+            sb.AppendLine();
+            sb.AppendLine("[ApiController]");
+            sb.AppendLine("[Route(\"api/[controller]\")]");
+            sb.AppendLine($"public class {controllerName} : ControllerBase");
+            sb.AppendLine("{");
+            sb.AppendLine($"    private readonly I{entityName}Service _service;");
+            sb.AppendLine();
+            sb.AppendLine($"    public {controllerName}(I{entityName}Service service)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        _service = service;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+
+            // GET ALL
+            sb.AppendLine("    [HttpGet]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<IEnumerable<object>>), StatusCodes.Status200OK)]");
+            sb.AppendLine("    public async Task<IActionResult> GetAll()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        var items = await _service.GetAllAsync();");
+            sb.AppendLine("        var response = ApiResponse.Success(items, \"Consulta exitosa\");");
+            sb.AppendLine("        return Ok(response);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+
+            // GET BY ID
+            sb.AppendLine($"    [HttpGet(\"{pkRoute}\")]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status200OK)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status404NotFound)]");
+            sb.AppendLine($"    public async Task<IActionResult> GetById({pkParams})");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var item = await _service.GetByIdAsync({pkArgs});");
+            sb.AppendLine("        if (item == null)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return NotFound(ApiResponse.Fail<object>(\"Registro no encontrado\"));");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        var response = ApiResponse.Success(item, \"Registro encontrado\");");
+            sb.AppendLine("        return Ok(response);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+
+            // CREATE
+            sb.AppendLine("    [HttpPost]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status201Created)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status400BadRequest)]");
+            sb.AppendLine($"    public async Task<IActionResult> Create([FromBody] {entityName}CreateRequestDto dto)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        if (!ModelState.IsValid)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var errors = ModelState.Values");
+            sb.AppendLine("                .SelectMany(v => v.Errors)");
+            sb.AppendLine("                .Select(e => e.ErrorMessage)");
+            sb.AppendLine("                .ToList();");
+            sb.AppendLine();
+            sb.AppendLine("            return BadRequest(ApiResponse.Fail(\"Error de validación\", errors));");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        var id = await _service.CreateAsync(dto);");
+            sb.AppendLine("        var response = ApiResponse.Success(id, \"Registro creado correctamente\");");
+            sb.AppendLine("        return CreatedAtAction(nameof(GetById), new { id }, response);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+
+            // UPDATE
+            sb.AppendLine($"    [HttpPut(\"{pkRoute}\")]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status200OK)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status400BadRequest)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status404NotFound)]");
+            sb.AppendLine($"    public async Task<IActionResult> Update({pkParams}, [FromBody] {entityName}UpdateRequestDto dto)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        if (!ModelState.IsValid)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var errors = ModelState.Values");
+            sb.AppendLine("                .SelectMany(v => v.Errors)");
+            sb.AppendLine("                .Select(e => e.ErrorMessage)");
+            sb.AppendLine("                .ToList();");
+            sb.AppendLine();
+            sb.AppendLine("            return BadRequest(ApiResponse.Fail(\"Error de validación\", errors));");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+
+            foreach (var pk in pkColumns)
+            {
+                var paramName = pk.Name.ToLower();
+                var propName = ToPascalCase(pk.Name);
+                sb.AppendLine($"        dto.{propName} = {paramName};");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("        await _service.UpdateAsync(dto);");
+            sb.AppendLine("        var response = ApiResponse.Success<object>(null, \"Registro actualizado correctamente\");");
+            sb.AppendLine("        return Ok(response);");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+
+            // DELETE
+            sb.AppendLine($"    [HttpDelete(\"{pkRoute}\")]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status200OK)]");
+            sb.AppendLine("    [ProducesResponseType(typeof(ResponseDTO<object>), StatusCodes.Status404NotFound)]");
+            sb.AppendLine($"    public async Task<IActionResult> Delete({pkParams})");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var deleted = await _service.DeleteAsync({pkArgs});");
+            sb.AppendLine("        if (!deleted)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return NotFound(ApiResponse.Fail<object>(\"Registro no encontrado para eliminación\"));");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        var response = ApiResponse.Success<object>(null, \"Registro eliminado correctamente\");");
+            sb.AppendLine("        return Ok(response);");
+            sb.AppendLine("    }");
             sb.AppendLine("}");
 
             return sb.ToString();

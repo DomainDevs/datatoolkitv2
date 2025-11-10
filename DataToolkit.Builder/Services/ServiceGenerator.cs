@@ -28,9 +28,6 @@ namespace DataToolkit.Builder.Services
             var updateDto = $"{entityName}UpdateRequestDto";
 
             var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
-            var pkType = pkColumns.Any()
-                ? MapClrType(pkColumns.First())
-                : "int";
 
             var sb = new StringBuilder();
 
@@ -44,7 +41,13 @@ namespace DataToolkit.Builder.Services
                 sb.AppendLine($"    Task<IEnumerable<{queryDto}>> GetAllAsync();");
 
             if (includeGetById)
-                sb.AppendLine($"    Task<{queryDto}?> GetByIdAsync({pkType} id);");
+            {
+                var pkParams = pkColumns.Any()
+                    ? string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}"))
+                    : "int id";
+
+                sb.AppendLine($"    Task<{queryDto}?> GetByIdAsync({pkParams});");
+            }
 
             if (includeCreate)
                 sb.AppendLine($"    Task<int> CreateAsync({createDto} dto);");
@@ -53,7 +56,13 @@ namespace DataToolkit.Builder.Services
                 sb.AppendLine($"    Task UpdateAsync({updateDto} dto);");
 
             if (includeDelete)
-                sb.AppendLine($"    Task<bool> DeleteAsync({pkType} id);");
+            {
+                var pkParams = pkColumns.Any()
+                    ? string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}"))
+                    : "int id";
+
+                sb.AppendLine($"    Task<bool> DeleteAsync({pkParams});");
+            }
 
             sb.AppendLine("}");
 
@@ -82,9 +91,6 @@ namespace DataToolkit.Builder.Services
             var mapperName = $"{entityName}Mapper";
 
             var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
-            var pkType = pkColumns.Any()
-                ? MapClrType(pkColumns.First())
-                : "int";
 
             var sb = new StringBuilder();
 
@@ -92,7 +98,6 @@ namespace DataToolkit.Builder.Services
             sb.AppendLine("using Domain.Interfaces;");
             sb.AppendLine($"using Application.Features.{domain}.DTOs;");
             sb.AppendLine($"using Application.Features.{domain}.Mappers;");
-            sb.AppendLine("using Entities = Domain.Entities;");
             sb.AppendLine();
             sb.AppendLine($"namespace Application.Features.{domain}.Services");
             sb.AppendLine("{");
@@ -118,9 +123,17 @@ namespace DataToolkit.Builder.Services
 
             if (includeGetById)
             {
-                sb.AppendLine($"        public async Task<{queryDto}?> GetByIdAsync({pkType} id)");
+                var pkParams = pkColumns.Any()
+                    ? string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}"))
+                    : "int id";
+
+                var repoParams = pkColumns.Any()
+                    ? string.Join(", ", pkColumns.Select(c => ToPascalCase(c.Name)))
+                    : "id";
+
+                sb.AppendLine($"        public async Task<{queryDto}?> GetByIdAsync({pkParams})");
                 sb.AppendLine("        {");
-                sb.AppendLine($"            var entity = await _repo.GetByIdAsync(id);");
+                sb.AppendLine($"            var entity = await _repo.GetByIdAsync({repoParams});");
                 sb.AppendLine("            if (entity == null) return null;");
                 sb.AppendLine();
                 sb.AppendLine($"            return {mapperName}.ToDto(entity);");
@@ -150,9 +163,17 @@ namespace DataToolkit.Builder.Services
 
             if (includeDelete)
             {
-                sb.AppendLine($"        public async Task<bool> DeleteAsync({pkType} id)");
+                var pkParams = pkColumns.Any()
+                    ? string.Join(", ", pkColumns.Select(c => $"{MapClrType(c)} {ToPascalCase(c.Name)}"))
+                    : "int id";
+
+                var repoParams = pkColumns.Any()
+                    ? string.Join(", ", pkColumns.Select(c => ToPascalCase(c.Name)))
+                    : "id";
+
+                sb.AppendLine($"        public async Task<bool> DeleteAsync({pkParams})");
                 sb.AppendLine("        {");
-                sb.AppendLine("            var affected = await _repo.DeleteByIdAsync(id);");
+                sb.AppendLine($"            var affected = await _repo.DeleteByIdAsync({repoParams});");
                 sb.AppendLine("            return affected > 0;");
                 sb.AppendLine("        }");
                 sb.AppendLine();
