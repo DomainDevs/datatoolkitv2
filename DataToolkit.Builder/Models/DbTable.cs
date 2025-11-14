@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using DataToolkit.Builder.Services;
+using System.Data.Common;
 
 namespace DataToolkit.Builder.Models
 {
@@ -34,6 +35,11 @@ namespace DataToolkit.Builder.Models
 
         // 👇 Aquí sí corresponde
         public int PrimaryKeyCount { get; set; }
+
+        /// <summary>
+        /// Llaves foráneas de esta tabla.
+        /// </summary>
+        public List<DbForeignKey> ForeignKeys { get; set; } = new();   // 👈 AGREGADO
 
     }
 }

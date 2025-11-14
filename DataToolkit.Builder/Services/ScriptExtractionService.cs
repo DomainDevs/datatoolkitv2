@@ -347,6 +347,46 @@ public class ScriptExtractionService
         // 🚀 Aquí se asigna el PrimaryKeyCount a nivel tabla
         dbTable.PrimaryKeyCount = dbTable.Columns.Count(c => c.IsPrimaryKey);
 
+
+        // --------------------------------------------------------
+        // 🚀 SUMAR EXTRACCIÓN DE FOREIGN KEYS (sin destruir nada)
+        // --------------------------------------------------------
+
+        var fkSql = @"
+        SELECT 
+            fk.name AS FK_Name,
+            cp.name AS ParentColumn,
+            SCHEMA_NAME(tr.schema_id) AS ReferencedSchema,
+            tr.name AS ReferencedTable,
+            cr.name AS ReferencedColumn
+            FROM sys.foreign_keys fk
+            INNER JOIN sys.foreign_key_columns fkc 
+            ON fkc.constraint_object_id = fk.object_id
+            INNER JOIN sys.tables tp 
+            ON tp.object_id = fk.parent_object_id
+        INNER JOIN sys.columns cp 
+        ON cp.column_id = fkc.parent_column_id 
+        AND cp.object_id = tp.object_id
+        INNER JOIN sys.tables tr 
+        ON tr.object_id = fk.referenced_object_id
+        INNER JOIN sys.columns cr 
+        ON cr.column_id = fkc.referenced_column_id 
+        AND cr.object_id = tr.object_id
+        WHERE tp.name = @tableName
+        AND SCHEMA_NAME(tp.schema_id) = @schema;
+        ";
+
+        var foreignKeys = await _sqlExecutor.FromSqlAsync<ForeignKeyResult>(fkSql, new { tableName, schema });
+
+        dbTable.ForeignKeys = foreignKeys.Select(f => new DbForeignKey
+        {
+            Name = f.FK_Name,
+            Column = f.ParentColumn,
+            ReferencedSchema = f.ReferencedSchema,
+            ReferencedTable = f.ReferencedTable,
+            ReferencedColumn = f.ReferencedColumn
+        }).ToList();
+
         return dbTable;
     }
 
@@ -419,6 +459,7 @@ public class ForeignKeyResult
 {
     public string FK_Name { get; set; } = "";
     public string ParentColumn { get; set; } = "";
+    public string ReferencedSchema { get; set; } = "";   // 👈 AGREGADO
     public string ReferencedTable { get; set; } = "";
     public string ReferencedColumn { get; set; } = "";
 }
@@ -448,3 +489,11 @@ public class StoredProcedureParameter
     public bool IsNullable { get; set; }
 }
 
+public class DbForeignKey
+{
+    public string Name { get; set; } = "";
+    public string Column { get; set; } = "";
+    public string ReferencedSchema { get; set; } = "";
+    public string ReferencedTable { get; set; } = "";
+    public string ReferencedColumn { get; set; } = "";
+}
