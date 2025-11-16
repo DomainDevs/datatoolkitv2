@@ -18,5 +18,10 @@
         public bool HasCheckConstraint { get; set; }    // Restricciones CHECK
         public string? CheckDefinition { get; set; }
 
+        // 👇 Campos para FK (se agregan)
+        public bool IsForeignKey { get; set; } = false;
+        public string? ForeignKeyTable { get; set; }
+        public string? ForeignKeyColumn { get; set; }
+
     }
 }
