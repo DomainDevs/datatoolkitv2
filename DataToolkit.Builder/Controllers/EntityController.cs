@@ -49,4 +49,51 @@ namespace DataToolkit.Builder.Controllers
             return Ok(entityCode);
         }
     }
+
+    // -------------------------
+    // Request DTOs / Enums
+    // -------------------------
+    public enum NavigationMode
+    {
+        /// <summary>
+        /// A -> Añade colecciones (ICollection&lt;T&gt;) en la tabla principal (la referenciada),
+        /// p. ej. Departamento tiene ICollection&lt;Empleado&gt; Empleados.
+        /// </summary>
+        PrincipalCollections = 0,
+
+        /// <summary>
+        /// B -> Añade referencia (propiedad de navegación) en la tabla dependiente,
+        /// p. ej. Empleado tiene Departamento Departamento (y [ForeignKey("DepartamentoId")] opcional).
+        /// </summary>
+        ReferenceOnDependent = 1
+    }
+
+    public class EntityGenerationRequest
+    {
+        /// <summary>
+        /// Schema por defecto "dbo"
+        /// </summary>
+        public string Schema { get; set; } = "dbo";
+
+        /// <summary>
+        /// Lista de tablas a generar (solo entre estas se crearán las relaciones/navegaciones)
+        /// </summary>
+        public List<string> Tables { get; set; } = new();
+
+        /// <summary>
+        /// Indica si se deben generar propiedades de navegación (solo entre tablas solicitadas)
+        /// </summary>
+        public bool GenerateNavigation { get; set; } = false;
+
+        /// <summary>
+        /// Modo de navegación: PrincipalCollections (A) o ReferenceOnDependent (B)
+        /// </summary>
+        public NavigationMode NavigationMode { get; set; } = NavigationMode.PrincipalCollections;
+
+        /// <summary>
+        /// Profundidad de búsqueda de relaciones (0 = solo tablas solicitadas, 1 = incluye tablas directamente relacionadas, etc.)
+        /// </summary>
+        public int MaxDepth { get; set; } = 0;
+    }
+
 }
