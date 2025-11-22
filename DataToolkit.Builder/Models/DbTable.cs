@@ -41,5 +41,8 @@ namespace DataToolkit.Builder.Models
         /// </summary>
         public List<DbForeignKey> ForeignKeys { get; set; } = new();   // 👈 AGREGADO
 
+        // ← Esto es lo que hace falta
+        public List<DbNavigationProperty> NavigationProperties { get; set; } = new();
+
     }
 }

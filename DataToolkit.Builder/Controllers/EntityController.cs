@@ -1,5 +1,7 @@
-﻿using DataToolkit.Builder.Services;
+﻿using DataToolkit.Builder.Models;
+using DataToolkit.Builder.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel;
 using System.Threading.Tasks;
 
 namespace DataToolkit.Builder.Controllers
@@ -48,6 +50,63 @@ namespace DataToolkit.Builder.Controllers
             // Devuelve el código C# como texto
             return Ok(entityCode);
         }
+
+        [HttpPost("generate/multiple")]
+        public async Task<IActionResult> GenerateEntities([FromBody] EntityGenerationRequest request)
+        {
+            if (request == null || request.Tables == null || request.Tables.Count == 0)
+                return BadRequest("Debe proporcionar al menos una tabla.");
+
+            // 1. Extraer metadata individual
+            var metadata = new Dictionary<string, DbTable>();
+
+            foreach (var table in request.Tables)
+            {
+                var meta = await _scriptService.ExtractTableMetadataAsync(request.Schema, table);
+                if (meta != null)
+                    metadata[table] = meta;
+            }
+
+            if (metadata.Count == 0)
+                return NotFound("No se encontró metadata para ninguna tabla.");
+
+            // 2. Generación de entidades finales
+            List<string> allCode = new();
+
+            if (!request.GenerateNavigation)
+            {
+                // Sin navegación
+                foreach (var item in metadata)
+                {
+                    string code = _entityGenerator.GenerateEntity(item.Value);
+                    allCode.Add($"// ----- {item.Key} -----\n{code}");
+                }
+            }
+            else
+            {
+                // Con navegación
+                var enhancedTables = _entityGenerator.AddNavigationProperties(
+                    metadata.Values.ToList(),
+                    request.NavigationMode,
+                    request.MaxDepth
+                );
+
+                foreach (var table in enhancedTables)
+                {
+                    string code = _entityGenerator.GenerateEntity(table);
+                    allCode.Add($"// ----- {table.Name} -----\n{code}");
+                }
+            }
+
+            // 3. Combinar todo en un solo string limpio
+            var combinedCode = string.Join("\n\n", allCode);
+
+            // 4. Devolver como texto plano
+            return Content(combinedCode, "text/plain");
+        }
+
+
+
     }
 
     // -------------------------
@@ -73,6 +132,7 @@ namespace DataToolkit.Builder.Controllers
         /// <summary>
         /// Schema por defecto "dbo"
         /// </summary>
+        [DefaultValue("dbo")]
         public string Schema { get; set; } = "dbo";
 
         /// <summary>

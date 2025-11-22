@@ -277,6 +277,10 @@ public class ScriptExtractionService
 
         using var _sqlExecutor = new SqlExecutor(_connectionManager.GetConnection());
 
+
+        // =========================================================
+        // 1. EXTRAER COLUMNAS
+        // =========================================================
         var columnsSql = @"
         SELECT 
             c.name AS ColumnName,
@@ -349,7 +353,7 @@ public class ScriptExtractionService
 
 
         // --------------------------------------------------------
-        // 🚀 SUMAR EXTRACCIÓN DE FOREIGN KEYS (sin destruir nada)
+        // 🚀 SUMAR EXTRACCIÓN DE FOREIGN KEYS 
         // --------------------------------------------------------
 
         var fkSql = @"
@@ -358,33 +362,56 @@ public class ScriptExtractionService
             cp.name AS ParentColumn,
             SCHEMA_NAME(tr.schema_id) AS ReferencedSchema,
             tr.name AS ReferencedTable,
-            cr.name AS ReferencedColumn
-            FROM sys.foreign_keys fk
-            INNER JOIN sys.foreign_key_columns fkc 
+            cr.name AS ReferencedColumn,
+            fk.delete_referential_action_desc AS DeleteRule,
+            fk.update_referential_action_desc AS UpdateRule,
+            (SELECT COUNT(*) 
+             FROM sys.index_columns ic
+             INNER JOIN sys.indexes ix ON ic.index_id = ix.index_id AND ic.object_id = ix.object_id
+             WHERE ic.object_id = tp.object_id 
+             AND ic.column_id = cp.column_id 
+             AND ix.is_unique = 1) AS IsUniqueConstraint
+        FROM sys.foreign_keys fk
+        INNER JOIN sys.foreign_key_columns fkc 
             ON fkc.constraint_object_id = fk.object_id
-            INNER JOIN sys.tables tp 
+        INNER JOIN sys.tables tp 
             ON tp.object_id = fk.parent_object_id
         INNER JOIN sys.columns cp 
-        ON cp.column_id = fkc.parent_column_id 
-        AND cp.object_id = tp.object_id
+            ON cp.column_id = fkc.parent_column_id 
+            AND cp.object_id = tp.object_id
         INNER JOIN sys.tables tr 
-        ON tr.object_id = fk.referenced_object_id
+            ON tr.object_id = fk.referenced_object_id
         INNER JOIN sys.columns cr 
-        ON cr.column_id = fkc.referenced_column_id 
-        AND cr.object_id = tr.object_id
+            ON cr.column_id = fkc.referenced_column_id 
+            AND cr.object_id = tr.object_id
         WHERE tp.name = @tableName
-        AND SCHEMA_NAME(tp.schema_id) = @schema;
-        ";
+        AND SCHEMA_NAME(tp.schema_id) = @schema;";
 
         var foreignKeys = await _sqlExecutor.FromSqlAsync<ForeignKeyResult>(fkSql, new { tableName, schema });
 
+        // =========================================================
+        // 3. PROCESAR FOREIGN KEYS CON LA NUEVA INFO
+        // =========================================================
         dbTable.ForeignKeys = foreignKeys.Select(f => new DbForeignKey
         {
             Name = f.FK_Name,
             Column = f.ParentColumn,
             ReferencedSchema = f.ReferencedSchema,
             ReferencedTable = f.ReferencedTable,
-            ReferencedColumn = f.ReferencedColumn
+            ReferencedColumn = f.ReferencedColumn,
+
+            // Nuevas propiedades
+            DeleteRule = f.DeleteRule,
+            UpdateRule = f.UpdateRule,
+            IsUnique = f.IsUniqueConstraint > 0,
+            IsSelfReference = string.Equals(f.ReferencedTable, tableName, StringComparison.OrdinalIgnoreCase),
+
+            // Inferencia básica para Entity Framework-style
+            IsCollection = !(f.IsUniqueConstraint > 0)
+                           && columns.Any(c => c.ColumnName == f.ParentColumn && c.IsNullable),
+            // Nullable FK → navegación de colección
+            // FK única → 1–1
+            // FK no NULL → 1–N
         }).ToList();
 
         return dbTable;
@@ -462,6 +489,11 @@ public class ForeignKeyResult
     public string ReferencedSchema { get; set; } = "";   // 👈 AGREGADO
     public string ReferencedTable { get; set; } = "";
     public string ReferencedColumn { get; set; } = "";
+
+    // Nuevos campos requeridos por el mapper
+    public string DeleteRule { get; set; } = "";
+    public string UpdateRule { get; set; } = "";
+    public int IsUniqueConstraint { get; set; }
 }
 
 public class DbParameterResult
