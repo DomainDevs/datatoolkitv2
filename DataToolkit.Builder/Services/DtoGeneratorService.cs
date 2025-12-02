@@ -107,63 +107,62 @@ namespace DataToolkit.Builder.Services
             NavigationMode navigationMode,
             int maxDepth = 0)
         {
-            var enrichedTables = tables.Select(t => new DbTable
-            {
-                Name = t.Name,
-                Schema = t.Schema,
-                Columns = t.Columns.ToList(),
-                ForeignKeys = t.ForeignKeys.ToList(),
-                PrimaryKeyCount = t.PrimaryKeyCount,
-                NavigationProperties = new List<DbNavigationProperty>()
-            }).ToList();
+            // Copia liviana
+            var enrichedTables = tables
+                .Select(t => new DbTable
+                {
+                    Name = t.Name,
+                    Schema = t.Schema,
+                    Columns = t.Columns.ToList(),
+                    ForeignKeys = t.ForeignKeys.ToList(),
+                    PrimaryKeyCount = t.PrimaryKeyCount,
+                    NavigationProperties = new List<DbNavigationProperty>()
+                })
+                .ToList();
 
             foreach (var table in enrichedTables)
             {
+                //
+                // 1) PRINCIPAL COLLECTIONS → lado principal (1:N ó 1:1)
+                //
                 if (navigationMode == NavigationMode.PrincipalCollections)
                 {
-                    // Colecciones de entidades que dependen de esta tabla (1:N)
-                    var referencingFks = enrichedTables
-                        .SelectMany(t => t.ForeignKeys.Select(fk => new { Child = t, FK = fk }))
-                        .Where(x =>
-                            string.Equals(x.FK.ReferencedTable, table.Name, StringComparison.OrdinalIgnoreCase) &&
-                            string.Equals(x.FK.ReferencedSchema ?? "dbo", table.Schema ?? "dbo", StringComparison.OrdinalIgnoreCase)
-                        );
+                    var children = enrichedTables
+                        .SelectMany(t => t.ForeignKeys
+                            .Where(fk => fk.ReferencedTable.Equals(table.Name, StringComparison.OrdinalIgnoreCase))
+                            .Select(fk => new { Child = t, FK = fk }));
 
-                    foreach (var entry in referencingFks)
+                    foreach (var entry in children)
                     {
-                        var child = entry.Child;
+                        string propName = ToPascalCase(entry.Child.Name);
 
-                        string propName = ToPascalCase(child.Name);
-                        if (!table.NavigationProperties
-                                .Any(n => n.PropertyName.Equals(propName, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            table.NavigationProperties.Add(new DbNavigationProperty
-                            {
-                                PropertyName = propName,  // singular
-                                TypeName = ToPascalCase(child.Name),
-                                IsCollection = true
-                            });
-                        }
-                    }
-                }
-                else if (navigationMode == NavigationMode.ReferenceOnDependent)
-                {
-                    // Referencias simple hacia la tabla principal (N:1)
-                    foreach (var fk in table.ForeignKeys)
-                    {
-                        var referenced = enrichedTables.FirstOrDefault(t =>
-                            string.Equals(t.Name, fk.ReferencedTable, StringComparison.OrdinalIgnoreCase) &&
-                            string.Equals(t.Schema ?? "dbo", fk.ReferencedSchema ?? "dbo", StringComparison.OrdinalIgnoreCase)
-                        );
-
-                        string propName = ToPascalCase(fk.ReferencedTable);
-                        if (!table.NavigationProperties
-                                .Any(n => n.PropertyName.Equals(propName, StringComparison.OrdinalIgnoreCase)))
+                        if (!table.NavigationProperties.Any(n => n.PropertyName.Equals(propName, StringComparison.OrdinalIgnoreCase)))
                         {
                             table.NavigationProperties.Add(new DbNavigationProperty
                             {
                                 PropertyName = propName,
-                                TypeName = referenced != null ? ToPascalCase(referenced.Name) : ToPascalCase(fk.ReferencedTable),
+                                TypeName = ToPascalCase(entry.Child.Name),
+                                IsCollection = !entry.FK.IsCollection // ← MAGIA AQUÍ
+                            });
+                        }
+                    }
+                }
+
+                //
+                // 2) REFERENCE ON DEPENDENT → lado dependiente (N:1 ó 1:1)
+                //
+                if (navigationMode == NavigationMode.ReferenceOnDependent)
+                {
+                    foreach (var fk in table.ForeignKeys)
+                    {
+                        string propName = ToPascalCase(fk.ReferencedTable);
+
+                        if (!table.NavigationProperties.Any(n => n.PropertyName.Equals(propName, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            table.NavigationProperties.Add(new DbNavigationProperty
+                            {
+                                PropertyName = propName,
+                                TypeName = ToPascalCase(fk.ReferencedTable),
                                 IsCollection = false
                             });
                         }
@@ -172,7 +171,8 @@ namespace DataToolkit.Builder.Services
             }
 
             return enrichedTables;
-        }que 
+        }
+
 
         public string GenerateCascadeDtos(
             DbTable rootTable,
