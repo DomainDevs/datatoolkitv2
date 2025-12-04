@@ -142,7 +142,7 @@ namespace DataToolkit.Builder.Services
                             {
                                 PropertyName = propName,
                                 TypeName = ToPascalCase(entry.Child.Name),
-                                IsCollection = !entry.FK.IsCollection // ← MAGIA AQUÍ
+                                IsCollection = (!entry.FK.IsUnique) //(!entry.FK.IsCollection && entry.FK.IsUnique)
                             });
                         }
                     }
