@@ -173,10 +173,29 @@ public class EntityGenerator
 
     private string ToPascalCase(string name)
     {
-        var parts = name.Split(new[] { '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        return string.Join("", parts.Select(p =>
-            char.ToUpperInvariant(p[0]) + (p.Length > 1 ? p.Substring(1).ToLowerInvariant() : "")
-        ));
+        if (string.IsNullOrWhiteSpace(name))
+            return name;
+
+        // Si NO contiene separadores → devolver tal cual.
+        if (!name.Contains('_') && !name.Contains('-') && !name.Contains(' '))
+            return name;
+
+        var parts = name.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+        var builder = new StringBuilder();
+
+        foreach (var part in parts)
+        {
+            var clean = new string(part.Where(char.IsLetterOrDigit).ToArray());
+            if (string.IsNullOrEmpty(clean))
+                continue;
+
+            builder.Append(char.ToUpperInvariant(clean[0]));
+            if (clean.Length > 1)
+                builder.Append(clean.Substring(1).ToLowerInvariant());
+        }
+
+        return builder.ToString();
     }
 }
 

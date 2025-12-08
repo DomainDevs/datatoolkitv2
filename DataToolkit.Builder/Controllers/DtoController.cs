@@ -176,8 +176,10 @@ namespace DataToolkit.Builder.Controllers
 
         public string DomainName { get; set; } = "";
 
-        public string Mode { get; set; } = "response";
+        [DefaultValue("request")]
+        public string Mode { get; set; } = "request";
 
+        [DefaultValue("Create")]
         public string Operation { get; set; } = "Create";
 
         public bool GenerateNavigation { get; set; } = false;

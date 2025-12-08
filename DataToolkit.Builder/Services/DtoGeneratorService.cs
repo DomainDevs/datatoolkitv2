@@ -40,26 +40,31 @@ namespace DataToolkit.Builder.Services
             foreach (var column in table.Columns)
             {
                 // REGLAS SEGÚN OPERACIÓN
-                if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase)
+                if (
+                    (operation.Equals("Create", StringComparison.OrdinalIgnoreCase)
+                    || operation.Equals("Update", StringComparison.OrdinalIgnoreCase))
                     && column.IsPrimaryKey && column.IsIdentity)
                 {
-                    // En CREATE no incluimos Identity PK
-                    sb.AppendLine($"        [JsonIgnore]");
-                }
-
-                if (operation.Equals("Update", StringComparison.OrdinalIgnoreCase)
-                    && column.IsPrimaryKey)
-                {
-                    // En UPDATE no incluimos ninguna PK
-                    
+                    // En CREATE/UPDATE no incluimos Identity PK
                     sb.AppendLine($"        [JsonIgnore]");
                 }
 
                 string jsonName = _jsonMapping.ContainsKey(column.Name)
                     ? _jsonMapping[column.Name]
+                    : ToCamelCase(column.Name);
+
+                string fieldName = _jsonMapping.ContainsKey(column.Name)
+                    ? _jsonMapping[column.Name]
                     : ToPascalCase(column.Name);
 
-                sb.AppendLine($"        [JsonPropertyName(\"{jsonName}\")]");
+                if (column.IsPrimaryKey && column.IsIdentity) 
+                {
+                    sb.AppendLine($"        //[JsonPropertyName(\"{jsonName}\")]");
+                } else
+                {
+                    sb.AppendLine($"        [JsonPropertyName(\"{jsonName}\")]");
+                }
+                    
 
                 var (clrType, rangeAttr) = SqlTypeMapper.ConvertToClrType(
                     column.SqlType,
@@ -72,14 +77,35 @@ namespace DataToolkit.Builder.Services
                 if (isRequest)
                 {
                     if (!column.IsNullable)
-                        sb.AppendLine("        [Required]");
-
+                    {
+                        if (column.IsPrimaryKey && column.IsIdentity)
+                        {
+                            sb.AppendLine("        //[Required]");
+                        }
+                        else
+                        {
+                            sb.AppendLine("        [Required]");
+                        }
+                        
+                    }
+                        
                     if (!string.IsNullOrEmpty(rangeAttr))
+                    {
                         sb.AppendLine($"        {rangeAttr}");
+                    }
+                        
                 }
-
-                sb.AppendLine($"        public {clrType}{(column.IsNullable && clrType != "string" ? "" : "")} {jsonName} {{ get; set; }}");
-                sb.AppendLine();
+                if (clrType == "string")
+                {
+                    // agregar StringLength
+                    sb.AppendLine($"        public {clrType}{(column.IsNullable && clrType != "string" ? "" : "")} {fieldName} {{ get; set; }} = \"\"; ");
+                }
+                else
+                {
+                    // agregar otras validaciones por default
+                    sb.AppendLine($"        public {clrType}{(column.IsNullable && clrType != "string" ? "" : "")} {fieldName} {{ get; set; }}");
+                }
+                    sb.AppendLine();
             }
 
             // Propiedades de navegación
@@ -208,19 +234,72 @@ namespace DataToolkit.Builder.Services
         }
 
 
-
+        
         private string ToPascalCase(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return name;
 
-            var parts = name.Split('_', StringSplitOptions.RemoveEmptyEntries);
+            // Si NO contiene separadores → devolver tal cual.
+            if (!name.Contains('_') && !name.Contains('-') && !name.Contains(' '))
+                return name;
+
+            var parts = name.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var builder = new StringBuilder();
+
+            foreach (var part in parts)
+            {
+                var clean = new string(part.Where(char.IsLetterOrDigit).ToArray());
+                if (string.IsNullOrEmpty(clean))
+                    continue;
+
+                builder.Append(char.ToUpperInvariant(clean[0]));
+                if (clean.Length > 1)
+                    builder.Append(clean.Substring(1).ToLowerInvariant());
+            }
+
+            return builder.ToString();
+        }
+
+        //Cuando el Front es JavasScript (Vue,React) = ToCamelCase, Cuando es Asp.net/Api Rest = (ToPascalCase), por convención
+        private string ToCamelCase(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return name;
+
+            // Si NO contiene separadores → convertir solo la primera letra en minúscula y retornar.
+            if (!name.Contains('_') && !name.Contains('-') && !name.Contains(' '))
+            {
+                return char.ToLowerInvariant(name[0]) + name.Substring(1);
+            }
+
+            var parts = name.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var builder = new StringBuilder();
+
             for (int i = 0; i < parts.Length; i++)
             {
-                parts[i] = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(parts[i].ToLower());
+                var clean = new string(parts[i].Where(char.IsLetterOrDigit).ToArray());
+                if (string.IsNullOrEmpty(clean))
+                    continue;
+
+                if (i == 0)
+                {
+                    // primera palabra en minúscula
+                    builder.Append(clean.ToLowerInvariant());
+                }
+                else
+                {
+                    // siguiente palabras en PascalCase
+                    builder.Append(char.ToUpperInvariant(clean[0]));
+                    if (clean.Length > 1)
+                        builder.Append(clean.Substring(1).ToLowerInvariant());
+                }
             }
-            return string.Join("", parts);
+
+            return builder.ToString();
         }
+
     }
 
 }
