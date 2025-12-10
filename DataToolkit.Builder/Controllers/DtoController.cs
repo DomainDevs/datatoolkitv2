@@ -120,7 +120,8 @@ namespace DataToolkit.Builder.Controllers
                     table,
                     request.DomainName,
                     request.Mode,
-                    request.Operation
+                    request.Operation,
+                    request.JsonToPascalCase
                 );
 
                 files[fileName] = code;
@@ -187,5 +188,7 @@ namespace DataToolkit.Builder.Controllers
         public NavigationMode NavigationMode { get; set; } = NavigationMode.PrincipalCollections;
 
         public int MaxDepth { get; set; } = 0;
+
+        public bool JsonToPascalCase { get; set; } = false;
     }
 }

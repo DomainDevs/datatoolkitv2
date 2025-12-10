@@ -19,7 +19,7 @@ namespace DataToolkit.Builder.Services
             _jsonMapping = jsonMapping ?? new Dictionary<string, string>();
         }
 
-        public string GenerateDto(DbTable table, string domainName, string mode = "response", string operation = "Create")
+        public string GenerateDto(DbTable table, string domainName, string mode = "response", string operation = "Create", Boolean isJsonPascalCase = false)
         {
             var sb = new StringBuilder();
             bool isRequest = mode.ToLower() == "request";
@@ -49,9 +49,18 @@ namespace DataToolkit.Builder.Services
                     sb.AppendLine($"        [JsonIgnore]");
                 }
 
-                string jsonName = _jsonMapping.ContainsKey(column.Name)
-                    ? _jsonMapping[column.Name]
-                    : ToCamelCase(column.Name);
+                if (isJsonPascalCase)
+                {
+                    string jsonName = _jsonMapping.ContainsKey(column.Name)
+                        ? _jsonMapping[column.Name]
+                        : ToPascalCase(column.Name);
+                }
+                else
+                {
+                    string jsonName = _jsonMapping.ContainsKey(column.Name)
+                        ? _jsonMapping[column.Name]
+                        : ToCamelCase(column.Name);
+                }
 
                 string fieldName = _jsonMapping.ContainsKey(column.Name)
                     ? _jsonMapping[column.Name]
