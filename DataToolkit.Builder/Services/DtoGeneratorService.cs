@@ -23,6 +23,7 @@ namespace DataToolkit.Builder.Services
         {
             var sb = new StringBuilder();
             bool isRequest = mode.ToLower() == "request";
+            string jsonName = "";
 
             var className = $"{ToPascalCase(table.Name)}{operation}{(isRequest ? "RequestDto" : "ResponseDto")}";
 
@@ -51,13 +52,13 @@ namespace DataToolkit.Builder.Services
 
                 if (isJsonPascalCase)
                 {
-                    string jsonName = _jsonMapping.ContainsKey(column.Name)
+                    jsonName = _jsonMapping.ContainsKey(column.Name)
                         ? _jsonMapping[column.Name]
                         : ToPascalCase(column.Name);
                 }
                 else
                 {
-                    string jsonName = _jsonMapping.ContainsKey(column.Name)
+                    jsonName = _jsonMapping.ContainsKey(column.Name)
                         ? _jsonMapping[column.Name]
                         : ToCamelCase(column.Name);
                 }

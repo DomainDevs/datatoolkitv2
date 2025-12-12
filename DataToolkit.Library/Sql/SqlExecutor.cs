@@ -30,17 +30,15 @@ namespace DataToolkit.Library.Sql;
 
 /// <summary>
 /// Ejecuta consultas SQL y procedimientos almacenados usando Dapper, 
-/// proporcionando soporte para mapeo simple, múltiples resultados, interpolación segura
-/// y parámetros de salida en procedimientos almacenados.
+/// proporcionando soporte mapeo simple, multi-mapping, multi-result y parámetros OUTPUT
 /// </summary>
 public class SqlExecutor : IDisposable, ISqlExecutor
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction? _transaction;
-    private bool _disposed;
-
     private readonly int? _defaultTimeout;
     private readonly ILogger _logger;
+    private bool _disposed;
 
     /// <summary>
     /// Constructor principal del ejecutor SQL.
@@ -59,10 +57,13 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     // ---------------------------------------------------------------------------
     // CONSULTAS INTERPOLADAS (seguros frente a inyección SQL)
     // ---------------------------------------------------------------------------
-
+    #region SqlInterpolated
     /// <summary>
     /// Ejecuta una consulta SQL interpolada y devuelve una colección de resultados tipados.
     /// </summary>
+    public IEnumerable<T> FromSqlInterpolated<T>(FormattableString query)
+    => FromSqlInterpolated<T>(query, null);
+
     public IEnumerable<T> FromSqlInterpolated<T>(FormattableString query, int? commandTimeout = null)
     {
         //var (sql, parameters) = BuildInterpolatedSql(query);
@@ -71,10 +72,12 @@ public class SqlExecutor : IDisposable, ISqlExecutor
         return ExecuteSafe(() => _connection.Query<T>(sql, parameters, _transaction, commandTimeout: commandTimeout ?? _defaultTimeout), sql);
 
     }
-
     /// <summary>
     /// Ejecuta una consulta SQL interpolada de forma asíncrona.
     /// </summary>
+    public Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query)
+    => FromSqlInterpolatedAsync<T>(query, null);
+
     public async Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query, int? commandTimeout = null)
     {
         //var (sql, parameters) = BuildInterpolatedSql(query);
@@ -82,37 +85,54 @@ public class SqlExecutor : IDisposable, ISqlExecutor
         var (sql, parameters) = BuildInterpolatedSql(query);
         return await ExecuteSafeAsync(() => _connection.QueryAsync<T>(sql, parameters, _transaction, commandTimeout: commandTimeout ?? _defaultTimeout), sql);
     }
-
+    #endregion
 
     // ---------------------------------------------------------------------------
     // Quieres ejecutar queries parametrizadas manualmente sin interpolación.
     // ---------------------------------------------------------------------------
+    #region FromSql
     /// <summary>
     /// Ejecuta una consulta SQL no interpolada, No necesitas joins o multi-mapping.
     /// Estás reutilizando consultas ya formadas (como scripts SQL definidos en otra capa).
     /// </summary>
+    public IEnumerable<T> FromSql<T>(string sql)
+    => FromSql<T>(sql, null, null);
+
+    public IEnumerable<T> FromSql<T>(string sql, object? parameters)
+        => FromSql<T>(sql, parameters, null);
+
     public IEnumerable<T> FromSql<T>(string sql, object? parameters = null, int? commandTimeout = null)
     {
         //return _connection.Query<T>(sql, parameters, _transaction);
         return ExecuteSafe(() => _connection.Query<T>(sql, parameters, _transaction, commandTimeout: commandTimeout ?? _defaultTimeout), sql);
     }
-
     /// <summary>
     /// Ejecuta una consulta SQL no interpolada, No necesitas joins o multi-mapping.
     /// Estás reutilizando consultas ya formadas (como scripts SQL definidos en otra capa).
     /// </summary>
+    public Task<IEnumerable<T>> FromSqlAsync<T>(string sql)
+        => FromSqlAsync<T>(sql, null, null);
+
+    public Task<IEnumerable<T>> FromSqlAsync<T>(string sql, object? parameters)
+        => FromSqlAsync<T>(sql, parameters, null);
+
     public async Task<IEnumerable<T>> FromSqlAsync<T>(string sql, object? parameters = null, int? commandTimeout = null)
     {
         //return await _connection.QueryAsync<T>(sql, parameters, _transaction);
         return await ExecuteSafeAsync(() => _connection.QueryAsync<T>(sql, parameters, _transaction, commandTimeout: commandTimeout ?? _defaultTimeout), sql);
     }
+    #endregion
 
     // ---------------------------------------------------------------------------
     // CONSULTAS CON MAPEOS MÚLTIPLES (JOIN de múltiples entidades)
     // ---------------------------------------------------------------------------
+    #region SqlMultiMap
     /// <summary>
     /// Ejecuta una consulta con múltiples mapeos entre tablas relacionadas (JOIN).
     /// </summary>
+    public IEnumerable<T> FromSqlMultiMap<T>(MultiMapRequest request)
+    => FromSqlMultiMap<T>(request, null);
+
     public IEnumerable<T> FromSqlMultiMap<T>(MultiMapRequest request, int? commandTimeout = null)
     {
 
@@ -134,10 +154,12 @@ public class SqlExecutor : IDisposable, ISqlExecutor
         }, request.Sql);
 
     }
-
     /// <summary>
     /// Ejecuta una consulta con múltiples mapeos de forma asíncrona.
     /// </summary>
+    public Task<IEnumerable<T>> FromSqlMultiMapAsync<T>(MultiMapRequest request)
+    => FromSqlMultiMapAsync<T>(request, null);
+
     public async Task<IEnumerable<T>> FromSqlMultiMapAsync<T>(MultiMapRequest request, int? commandTimeout = null)
     {
 
@@ -158,13 +180,25 @@ public class SqlExecutor : IDisposable, ISqlExecutor
             return result.Cast<T>();
         }, request.Sql);
     }
+    #endregion
 
     // ---------------------------------------------------------------------------
     // CONSULTAS MULTI-RESULTADO (varios SELECT dentro de un SP)
     // ---------------------------------------------------------------------------
+    #region QueryMultiple
     /// <summary>
     /// Ejecuta un procedimiento almacenado o query que retorna múltiples conjuntos de resultados.
     /// </summary>
+    /// 
+    public Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql)
+        => QueryMultipleAsync(sql, null, CommandType.StoredProcedure, null);
+
+    public Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql, object? parameters)
+        => QueryMultipleAsync(sql, parameters, CommandType.StoredProcedure, null);
+
+    public Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql, object? parameters, CommandType commandType)
+        => QueryMultipleAsync(sql, parameters, commandType, null);
+
     public async Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(
         string sql,
         object? parameters = null,
@@ -188,13 +222,17 @@ public class SqlExecutor : IDisposable, ISqlExecutor
         }, sql);
 
     }
+    #endregion QueryMultiple
 
     // ---------------------------------------------------------------------------
     // EJECUCIÓN DE SQL (INSERT, UPDATE, DELETE)
     // ---------------------------------------------------------------------------
+    #region Execute
     /// <summary>
     /// Ejecuta una instrucción SQL (INSERT/UPDATE/DELETE).
     /// </summary>
+    public int Execute(string sql) => Execute(sql, null, null);
+    public int Execute(string sql, object? parameters) => Execute(sql, parameters, null);
     public int Execute(string sql, object? parameters = null, int? commandTimeout = null)
     {
         //return _connection.Execute(sql, parameters, _transaction);
@@ -204,18 +242,25 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     /// <summary>
     /// Ejecuta una instrucción SQL de forma asíncrona.
     /// </summary>
+    public Task<int> ExecuteAsync(string sql) => ExecuteAsync(sql, null, null);
+    public Task<int> ExecuteAsync(string sql, object? parameters) => ExecuteAsync(sql, parameters, null);
     public async Task<int> ExecuteAsync(string sql, object? parameters = null, int? commandTimeout = null)
     {
         //return await _connection.ExecuteAsync(sql, parameters, _transaction);
         return await ExecuteSafeAsync(() => _connection.ExecuteAsync(sql, parameters, _transaction, commandTimeout: commandTimeout ?? _defaultTimeout), sql);
     }
+    #endregion Execute
 
     // ---------------------------------------------------------------------------
     // EJECUCIÓN CON PARÁMETROS DE SALIDA (OUTPUT)
     // ---------------------------------------------------------------------------
+    #region ExecuteWithOutput
     /// <summary>
     /// Ejecuta un procedimiento almacenado que contiene parámetros OUTPUT (modo síncrono).
     /// </summary>
+    public (int RowsAffected, Dictionary<string, object> OutputValues) ExecuteWithOutput(string storedProcedure, Action<DynamicParameters> configureParameters)
+    => ExecuteWithOutput(storedProcedure, configureParameters, null);
+
     public (int RowsAffected, Dictionary<string, object> OutputValues) ExecuteWithOutput(
         string storedProcedure,
         Action<DynamicParameters> configureParameters,
@@ -250,6 +295,9 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     /// <summary>
     /// Ejecuta un procedimiento almacenado que contiene parámetros OUTPUT (modo asíncrono).
     /// </summary>
+    public Task<(int RowsAffected, DynamicParameters Output)> ExecuteWithOutputAsync(string storedProcedure, Action<DynamicParameters> configureParameters)
+        => ExecuteWithOutputAsync(storedProcedure, configureParameters, null);
+
     public async Task<(int RowsAffected, DynamicParameters Output)> ExecuteWithOutputAsync(
         string storedProcedure,
         Action<DynamicParameters> configureParameters,
@@ -265,6 +313,7 @@ public class SqlExecutor : IDisposable, ISqlExecutor
             return (rows, parameters);
         }, storedProcedure);
     }
+    #endregion
 
     // ---------------------------------------------------------------------------
     // MÉTODO AUXILIAR PARA INTERPOLACIÓN SEGURA
