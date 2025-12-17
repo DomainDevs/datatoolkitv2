@@ -1,4 +1,5 @@
 ﻿using DataToolkit.Library.Connections;
+using DataToolkit.Library.Fluent;
 using DataToolkit.Library.Sql;
 using DataToolkit.Library.UnitOfWorkLayer;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,9 @@ public static class ServiceCollectionExtensions
             var conn = factory.CreateConnection(options.DefaultAlias);
             return new SqlExecutor(conn);
         });
+
+        // 🔥 NUEVO
+        services.AddScoped<IFluentQuery, FluentQuery>();
 
         return services;
     }

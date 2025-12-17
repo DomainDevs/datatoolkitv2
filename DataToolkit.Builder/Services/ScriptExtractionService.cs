@@ -365,12 +365,17 @@ public class ScriptExtractionService
             cr.name AS ReferencedColumn,
             fk.delete_referential_action_desc AS DeleteRule,
             fk.update_referential_action_desc AS UpdateRule,
-            (SELECT COUNT(*) 
-             FROM sys.index_columns ic
-             INNER JOIN sys.indexes ix ON ic.index_id = ix.index_id AND ic.object_id = ix.object_id
-             WHERE ic.object_id = tp.object_id 
-             AND ic.column_id = cp.column_id 
-             AND ix.is_unique = 1) AS IsUniqueConstraint
+            (SELECT COUNT(*)
+             FROM sys.indexes ix
+             INNER JOIN sys.index_columns ic 
+               ON ix.object_id = ic.object_id 
+              AND ix.index_id = ic.index_id
+             WHERE ix.object_id = tp.object_id
+               AND ix.is_unique = 1
+             GROUP BY ix.index_id
+             HAVING COUNT(*) = 1
+                AND MAX(ic.column_id) = cp.column_id
+            ) AS IsUniqueConstraint
         FROM sys.foreign_keys fk
         INNER JOIN sys.foreign_key_columns fkc 
             ON fkc.constraint_object_id = fk.object_id
@@ -406,9 +411,10 @@ public class ScriptExtractionService
             IsUnique = f.IsUniqueConstraint > 0,
             IsSelfReference = string.Equals(f.ReferencedTable, tableName, StringComparison.OrdinalIgnoreCase),
 
-            // Inferencia básica para Entity Framework-style
-            IsCollection = !(f.IsUniqueConstraint > 0)
-                           && columns.Any(c => c.ColumnName == f.ParentColumn && c.IsNullable),
+            // Inferencia básica para Entity Framework-style (cambio estilo constraint)
+            //IsCollection = !(f.IsUniqueConstraint > 0) && columns.Any(c => c.ColumnName == f.ParentColumn && c.IsNullable),
+            IsCollection = !(f.IsUniqueConstraint >0),
+
             // Nullable FK → navegación de colección
             // FK única → 1–1
             // FK no NULL → 1–N

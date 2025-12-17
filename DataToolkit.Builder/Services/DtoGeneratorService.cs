@@ -178,7 +178,8 @@ namespace DataToolkit.Builder.Services
                             {
                                 PropertyName = propName,
                                 TypeName = ToPascalCase(entry.Child.Name),
-                                IsCollection = (!entry.FK.IsUnique) //(!entry.FK.IsCollection && entry.FK.IsUnique)
+                                IsCollection = entry.FK.IsCollection
+                                //IsCollection = (!entry.FK.IsUnique) //(!entry.FK.IsCollection && entry.FK.IsUnique)
                             });
                         }
                     }

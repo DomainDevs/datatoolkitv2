@@ -31,6 +31,7 @@ namespace DataToolkit.Library.Sql;
 /// <summary>
 /// Ejecuta consultas SQL y procedimientos almacenados usando Dapper, 
 /// proporcionando soporte mapeo simple, multi-mapping, multi-result y parámetros OUTPUT
+/// adición sobrecarga de métodos para Comodidad en el autocompletado, y evitar pasar métodos en null
 /// </summary>
 public class SqlExecutor : IDisposable, ISqlExecutor
 {
