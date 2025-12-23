@@ -92,6 +92,24 @@ namespace DataToolkit.Library.Fluent
             return this;
         }
 
+        /// <summary>
+        /// Aplica un filtro condicionalmente
+        /// </summary>
+        public IFluentQuery WhereIf(bool condition, string sqlCondition)
+        {
+            if (condition)
+            {
+                if (_hasWhere)
+                    _sql.Append("AND ");
+                else
+                    _sql.Append("WHERE ");
+
+                _sql.Append(sqlCondition).Append(" ");
+                _hasWhere = true;
+            }
+            return this;
+        }
+
         public IFluentQuery And(string condition)
         {
             _sql.Append(_hasWhere ? "AND " : "WHERE ")

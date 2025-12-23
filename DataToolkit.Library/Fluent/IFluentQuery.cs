@@ -19,7 +19,8 @@ namespace DataToolkit.Library.Fluent
         IFluentQuery RightJoin(string table, string on);
         IFluentQuery Select(params string[] columns);
         IFluentQuery Timeout(int seconds);
-        IFluentQuery Where(string condition);
         string ToSql();
+        IFluentQuery Where(string condition);
+        IFluentQuery WhereIf(bool condition, string sqlCondition);
     }
 }

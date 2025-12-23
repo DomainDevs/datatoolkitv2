@@ -3,6 +3,7 @@ using DataToolkit.Builder.Context;
 using DataToolkit.Builder.Services;
 using DataToolkit.Library.Connections;
 using DataToolkit.Library.Extensions;
+using DataToolkit.Library.Fluent;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,6 +50,8 @@ builder.Services.AddHttpContextAccessor(); //Para poder manejar cache, SqlConnec
 builder.Services.AddScoped<ConnectionContext>();
 builder.Services.AddScoped<ISqlConnectionManager, SqlConnectionManager>();
 builder.Services.AddSingleton<IUserConnectionStore, InMemoryUserConnectionStore>(); //Todas las instancias comparten el mismo almacenamiento
+
+
 
 
 var app = builder.Build();
