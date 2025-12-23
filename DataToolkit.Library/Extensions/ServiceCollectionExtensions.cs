@@ -9,7 +9,7 @@ namespace DataToolkit.Library.Extensions;
 public class DataToolkitOptions
 {
     internal Dictionary<string, (string connectionString, DatabaseProvider provider)> Connections { get; } = new();
-    public string DefaultAlias { get; set; }
+    public string DefaultAlias { get; set; } = default!;
 
     public void AddConnection(string alias, string connectionString, DatabaseProvider provider)
     {
@@ -20,36 +20,53 @@ public class DataToolkitOptions
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Agrega DataToolkit con múltiples conexiones y alias personalizables.
-    /// AddScoped, .NET creará una instancia de SqlExecutor por cada scope (por cada petición HTTP).
+    /// Registro principal estilo EF Core.
+    /// Toda la configuración vive dentro del contenedor DI.
     /// </summary>
     public static IServiceCollection AddDataToolkitWith(
         this IServiceCollection services,
         Action<DataToolkitOptions> configure)
     {
+        // 1️⃣ Construir opciones
         var options = new DataToolkitOptions();
         configure(options);
 
-        var factory = new MultiDbConnectionFactory(options.Connections);
-        services.AddSingleton<IDbConnectionFactory>(factory);
+        if (string.IsNullOrWhiteSpace(options.DefaultAlias))
+            throw new InvalidOperationException("DataToolkit: DefaultAlias no fue configurado.");
 
-        services.AddScoped<IUnitOfWork>(_ =>
-            new UnitOfWork(factory, options.DefaultAlias));
+        // 2️⃣ Registrar opciones como singleton (CLAVE)
+        services.AddSingleton(options);
 
-        services.AddScoped<SqlExecutor>(_ =>
+        // 3️⃣ Factory de conexiones (singleton)
+        services.AddSingleton<IDbConnectionFactory>(_ =>
+            new MultiDbConnectionFactory(options.Connections));
+
+        // 4️⃣ UnitOfWork (scoped)
+        services.AddScoped<IUnitOfWork>(sp =>
         {
-            var conn = factory.CreateConnection(options.DefaultAlias);
-            return new SqlExecutor(conn);
+            var factory = sp.GetRequiredService<IDbConnectionFactory>();
+            var opts = sp.GetRequiredService<DataToolkitOptions>();
+            return new UnitOfWork(factory, opts.DefaultAlias);
         });
 
-        // 🔥 NUEVO
+        // 5️⃣ SqlExecutor (scoped, EF-like)
+        services.AddScoped<ISqlExecutor>(sp =>
+        {
+            var factory = sp.GetRequiredService<IDbConnectionFactory>();
+            var opts = sp.GetRequiredService<DataToolkitOptions>();
+
+            var connection = factory.CreateConnection(opts.DefaultAlias);
+            return new SqlExecutor(connection);
+        });
+
+        // 6️⃣ FluentQuery (scoped)
         services.AddScoped<IFluentQuery, FluentQuery>();
 
         return services;
     }
 
     /// <summary>
-    /// Acceso rápido para conexión SQL Server
+    /// Acceso rápido SQL Server (single DB)
     /// </summary>
     public static IServiceCollection AddDataToolkitSqlServer(
         this IServiceCollection services,
@@ -64,7 +81,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Acceso rápido para conexión Sybase
+    /// Acceso rápido Sybase (single DB)
     /// </summary>
     public static IServiceCollection AddDataToolkitSybase(
         this IServiceCollection services,
