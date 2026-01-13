@@ -6,10 +6,11 @@ var builder = WebApplication.CreateBuilder(args);
 var conStringSQl = builder.Configuration.GetConnectionString("SqlServer") ??
      throw new InvalidOperationException("Connection string 'ConnectionStrings'" +
     " not found.");
-var conSybase = builder.Configuration.GetConnectionString("SqlServer") ??
+var conSybase = builder.Configuration.GetConnectionString("Sybase") ??
      throw new InvalidOperationException("Connection string 'ConnectionStrings'" +
     " not found.");
 
+/*
 // --- Agregar controladores y Swagger ---
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -24,6 +25,11 @@ builder.Services.AddDataToolkitWith(options =>
     options.AddConnection("Sybase", conSybase, DatabaseProvider.Sybase);
     options.DefaultAlias = "SqlServer";
 });
+*/
+
+builder.Services.AddDataToolkitSqlServer(
+    builder.Configuration.GetConnectionString("SqlServer")!
+);
 
 var app = builder.Build();
 

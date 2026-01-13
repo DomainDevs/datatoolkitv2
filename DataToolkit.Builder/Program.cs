@@ -31,12 +31,14 @@ builder.Services.AddSwaggerGen();
 
 // --- Registrar DataToolkit con una única línea limpia ---
 //O, para múltiples conexiones:
+/*
 builder.Services.AddDataToolkitWith(options =>
 {
     options.AddConnection("SqlServer", conStringSQl, DatabaseProvider.SqlServer);
     options.AddConnection("Sybase", conSybase, DatabaseProvider.Sybase);
     options.DefaultAlias = "SqlServer";
 });
+*/
 
 // Servicios específicos del builder
 builder.Services.AddScoped<MetadataService>();
@@ -52,6 +54,10 @@ builder.Services.AddScoped<ISqlConnectionManager, SqlConnectionManager>();
 builder.Services.AddSingleton<IUserConnectionStore, InMemoryUserConnectionStore>(); //Todas las instancias comparten el mismo almacenamiento
 
 
+
+builder.Services.AddDataToolkitSqlServer(
+    builder.Configuration.GetConnectionString("SqlServer")!
+);
 
 
 var app = builder.Build();
