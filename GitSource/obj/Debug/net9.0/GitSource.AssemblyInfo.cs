@@ -11,12 +11,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("DataToolkit.Cli")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("GitSource")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+740a7aa0d34c5f7f7f9efb5388a97eee1c53ca54")]
-[assembly: System.Reflection.AssemblyProductAttribute("DataToolkit.Cli")]
-[assembly: System.Reflection.AssemblyTitleAttribute("DataToolkit.Cli")]
+[assembly: System.Reflection.AssemblyProductAttribute("GitSource")]
+[assembly: System.Reflection.AssemblyTitleAttribute("GitSource")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Generado por la clase WriteCodeFragment de MSBuild.

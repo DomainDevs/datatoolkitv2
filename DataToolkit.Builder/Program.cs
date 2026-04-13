@@ -46,12 +46,15 @@ builder.Services.AddScoped<ScriptExtractionService>();
 builder.Services.AddScoped<EntityGenerator>(); // Registrar EntityGenerator
 builder.Services.AddScoped<DtoGeneratorService>();
 builder.Services.AddScoped<ControllerGeneratorService>();
+builder.Services.AddScoped<MigrationMetadataService>();
 
 //Servicio conexión
 builder.Services.AddHttpContextAccessor(); //Para poder manejar cache, SqlConnectionManager depende de IHttpContextAccessor
 builder.Services.AddScoped<ConnectionContext>();
 builder.Services.AddScoped<ISqlConnectionManager, SqlConnectionManager>();
 builder.Services.AddSingleton<IUserConnectionStore, InMemoryUserConnectionStore>(); //Todas las instancias comparten el mismo almacenamiento
+
+
 
 
 
