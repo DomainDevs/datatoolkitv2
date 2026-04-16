@@ -20,7 +20,7 @@ public class SqlServerConnectionFactory : IDbConnectionFactory
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException($"No se encontró la cadena de conexión para el alias '{dbAlias}'");
 
-        Console.WriteLine(connectionString);
+        Console.WriteLine("Conexión generada");
 
         return new SqlConnection(connectionString);
     }
