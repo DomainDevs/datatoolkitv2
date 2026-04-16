@@ -13,9 +13,10 @@ class Program
 
         // URL del repo (normal o API recursiva)
         //string inputUrl = "https://github.com/DomainDevs/Hogar350";
-        //string inputUrl = "https://github.com/DomainDevs/MigrationEngineRP";
+        string inputUrl = "https://github.com/DomainDevs/MigrationEngineRP";
         //string inputUrl = "https://github.com/DomainDevs/Isoat/tree/main/04_Construction/Source/WebService/Web/UI/WebService";
-        string inputUrl = "https://github.com/DomainDevs/Prototype";
+        //string inputUrl = "https://github.com/DomainDevs/Prototype";
+    
 
         // Tipos de archivo que quieres listar (pueden ser múltiples)
         //string[] allowedExtensions = new[] { ".json", ".css", ".js", ".htm", ".html", ".vue",  };

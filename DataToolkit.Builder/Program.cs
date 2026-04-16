@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 var conStringSQl = builder.Configuration.GetConnectionString("SqlServer") ??
      throw new InvalidOperationException("Connection string 'ConnectionStrings'" +
     " not found.");
+
 var conSybase = builder.Configuration.GetConnectionString("SqlServer") ??
      throw new InvalidOperationException("Connection string 'ConnectionStrings'" +
     " not found.");

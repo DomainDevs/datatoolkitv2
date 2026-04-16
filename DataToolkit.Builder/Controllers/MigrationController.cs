@@ -44,11 +44,21 @@ namespace DataToolkit.Builder.Controllers
                 // Comparar
                 var differences = _metadataService.CompareMetadata(sourceMetadata, targetMetadata);
 
+                // 🔴 NUEVO: generar Work Files
+                var outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WF_OUTPUT");
+
+                await _metadataService.GenerateWorkFilesAsync(
+                    sourceMetadata,
+                    targetMetadata,
+                    outputPath
+                );
+
                 return Ok(new
                 {
                     SourceCount = sourceMetadata.Count,
                     TargetCount = targetMetadata.Count,
-                    Differences = differences
+                    Differences = differences,
+                    WorkFilesPath = outputPath
                 });
             }
             catch (Exception ex)
