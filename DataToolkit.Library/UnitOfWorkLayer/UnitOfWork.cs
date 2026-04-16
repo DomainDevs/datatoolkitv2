@@ -1,4 +1,5 @@
-﻿using DataToolkit.Library.Connections;
+﻿using DataToolkit.Library.Common;
+using DataToolkit.Library.Connections;
 using DataToolkit.Library.Fluent; // ✅ NUEVO
 using DataToolkit.Library.Repositories;
 using DataToolkit.Library.Sql;
@@ -11,26 +12,37 @@ namespace DataToolkit.Library.UnitOfWorkLayer;
 
 public class UnitOfWork : IUnitOfWork
 {
+    
     private readonly IDbConnection _connection;
     private IDbTransaction? _transaction;
     private bool _disposed;
     private readonly Dictionary<Type, object> _repositories = new();
+    //Logs
+    private readonly DataToolkitOptions _options;
     private readonly ILogger _logger = Log.ForContext<UnitOfWork>();
 
     public IStoredProcedureExecutor StoredProcedureExecutor { get; private set; }
     public ISqlExecutor Sql { get; private set; }
     public IFluentQuery Fluent { get; private set; } // ✅ NUEVO
 
-    public UnitOfWork(IDbConnectionFactory factory, string dbAlias = "SqlServer")
+    // Prioridad: 1. Factory, 2. Identidad (Alias), 3. Configuración logs (Options)
+    public UnitOfWork(IDbConnectionFactory factory, string dbAlias = "SqlServer", DataToolkitOptions? options = null)
     {
-        _logger.Information("Iniciando conexión a {Alias}...", dbAlias);
+        // 1. Identificar y Crear Conexión (Lo más importante)
         _connection = factory.CreateConnection(dbAlias);
-        // El factory crea la instancia, pero aquí registramos el intento
-        _logger.Debug("Conexión creada para {Alias}. Estado: {State}", dbAlias, _connection.State);
 
-        StoredProcedureExecutor = new StoredProcedureExecutor(_connection);
+        // 2. Inicializar Ejecutores base
         Sql = new SqlExecutor(_connection);
-        Fluent = new FluentQuery(Sql); // ✅ Inicializado
+        StoredProcedureExecutor = new StoredProcedureExecutor(_connection);
+        Fluent = new FluentQuery(Sql);
+
+        // 3. Cargar configuración de logs
+        _options = options ?? new DataToolkitOptions();
+
+        if (_options.EnableLogging)
+        {
+            _logger.Information("[{Prefix}] Motor listo para: {Alias}", _options.LogPrefix, dbAlias);
+        }
     }
 
     // Renombrado de GetRepository a Repository para cumplir la interfaz
@@ -54,31 +66,34 @@ public class UnitOfWork : IUnitOfWork
         {
             _connection.Open();
         }
-            
 
         _transaction = _connection.BeginTransaction();
-        // ... re-inicializar ejecutores ...
-        _logger.Information("Transacción iniciada correctamente.");
-
         StoredProcedureExecutor = new StoredProcedureExecutor(_connection, _transaction);
         Sql = new SqlExecutor(_connection, _transaction);
-        // El Fluent no necesita transacción en el objeto, pero se podría inyectar si fuera necesario
+
+        if (_options.EnableLogging)
+            _logger.Warning("[{Prefix}] Transacción iniciada en base de datos.", _options.LogPrefix);
+
     }
 
     public void Commit()
     {
-        _logger.Information("Ejecutando Commit");
         _transaction?.Commit();
         _transaction = null;
         RefreshExecutors();
+
+        if (_options.EnableLogging)
+            _logger.Information("[{Prefix}] Commit realizado correctamente.", _options.LogPrefix);
     }
 
     public void Rollback()
     {
-        _logger.Error("Ejecutando Rollback");
         _transaction?.Rollback();
         _transaction = null;
         RefreshExecutors();
+
+        if (_options.EnableLogging)
+            _logger.Error("[{Prefix}] Rollback ejecutado: Los cambios fueron revertidos.", _options.LogPrefix);
     }
 
     private void RefreshExecutors()
@@ -94,9 +109,12 @@ public class UnitOfWork : IUnitOfWork
     {
         if (_disposed) return;
 
-        _logger.Debug("Cerrando y liberando recursos de conexión.");
         _transaction?.Dispose();
         _connection?.Dispose();
+
+        if (_options.EnableLogging)
+            _logger.Debug("[{Prefix}] Recursos de conexión liberados.", _options.LogPrefix);
+
         _disposed = true;
         GC.SuppressFinalize(this);
     }

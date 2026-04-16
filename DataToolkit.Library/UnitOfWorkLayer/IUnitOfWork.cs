@@ -7,16 +7,20 @@ namespace DataToolkit.Library.UnitOfWorkLayer;
 
 public interface IUnitOfWork : IDisposable
 {
+    // Ejecutores de comandos
     ISqlExecutor Sql { get; }
-    IFluentQuery Fluent { get; } // <--- Agregado
+    IFluentQuery Fluent { get; }
     IStoredProcedureExecutor StoredProcedureExecutor { get; }
 
-    // Cambiamos el nombre a Repository para estandarizar
+    // Acceso a datos tipados
     IGenericRepository<T> Repository<T>() where T : class;
 
+    // Gestión de Transacciones (Sincrónico)
     void BeginTransaction();
     void Commit();
-    Task CommitAsync();
     void Rollback();
+
+    // Gestión de Transacciones (Asincrónico)
+    Task CommitAsync();
     Task RollbackAsync();
 }
