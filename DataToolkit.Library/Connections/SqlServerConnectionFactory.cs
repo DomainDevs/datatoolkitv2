@@ -15,9 +15,12 @@ public class SqlServerConnectionFactory : IDbConnectionFactory
 
     public IDbConnection CreateConnection(string dbAlias)
     {
+        
         var connectionString = _configuration.GetConnectionString(dbAlias);
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException($"No se encontró la cadena de conexión para el alias '{dbAlias}'");
+
+        Console.WriteLine(connectionString);
 
         return new SqlConnection(connectionString);
     }

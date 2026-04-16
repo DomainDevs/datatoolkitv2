@@ -13,20 +13,30 @@ class Program
 
         // URL del repo (normal o API recursiva)
         //string inputUrl = "https://github.com/DomainDevs/Hogar350";
-        string inputUrl = "https://github.com/DomainDevs/MigrationEngineRP";
+        //string inputUrl = "https://github.com/DomainDevs/MigrationEngineRP";
         //string inputUrl = "https://github.com/DomainDevs/Isoat/tree/main/04_Construction/Source/WebService/Web/UI/WebService";
         //string inputUrl = "https://github.com/DomainDevs/Prototype";
-    
+        string inputUrl = "https://github.com/DomainDevs/datatoolkitv2";
 
         // Tipos de archivo que quieres listar (pueden ser múltiples)
         //string[] allowedExtensions = new[] { ".json", ".css", ".js", ".htm", ".html", ".vue",  };
         string[] allowedExtensions = new[] { ".json", ".cs", ".html", ".conmgr", ".dtsx", ".sln", ".csproj" };
 
+        // 🔥 obtener repo API base
+        string repoApiUrl = TransformToRepoApi(inputUrl);
 
-        string apiUrl = TransformToRecursiveApi(inputUrl);
+        var repoJson = await client.GetStringAsync(repoApiUrl);
+        using var repoDoc = JsonDocument.Parse(repoJson);
+
+        string branch = repoDoc.RootElement
+            .GetProperty("default_branch")
+            .GetString();
+
+        Console.WriteLine($"Branch: {branch}");
+
+        string apiUrl = $"{repoApiUrl}/git/trees/{branch}?recursive=1";
 
         var response = await client.GetStringAsync(apiUrl);
-
         using var doc = JsonDocument.Parse(response);
 
         foreach (var item in doc.RootElement.GetProperty("tree").EnumerateArray())
@@ -50,16 +60,13 @@ class Program
             if (!match)
                 continue;
 
-            string rawUrl = GetRawUrl(inputUrl, path);
+            string rawUrl = GetRawUrl(inputUrl, path, branch);
             Console.WriteLine(rawUrl);
         }
     }
 
-    static string TransformToRecursiveApi(string url)
+    static string TransformToRepoApi(string url)
     {
-        if (url.Contains("api.github.com"))
-            return url;
-
         var match = Regex.Match(url, @"github\.com/([^/]+)/([^/]+)");
         if (!match.Success)
             throw new ArgumentException("URL no válida de GitHub.");
@@ -67,15 +74,15 @@ class Program
         string user = match.Groups[1].Value;
         string repo = match.Groups[2].Value;
 
-        return $"https://api.github.com/repos/{user}/{repo}/git/trees/main?recursive=1";
+        return $"https://api.github.com/repos/{user}/{repo}";
     }
 
-    static string GetRawUrl(string inputUrl, string path)
+    static string GetRawUrl(string inputUrl, string path, string branch)
     {
         var match = Regex.Match(inputUrl, @"github\.com/([^/]+)/([^/]+)");
         string user = match.Groups[1].Value;
         string repo = match.Groups[2].Value;
 
-        return $"https://raw.githubusercontent.com/{user}/{repo}/main/{path}";
+        return $"https://raw.githubusercontent.com/{user}/{repo}/{branch}/{path}";
     }
 }

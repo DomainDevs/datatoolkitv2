@@ -15,12 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataToolkit.Library\DataToolkit.Library.csproj" />
+    <Folder Include="Templates\Entity\" />
+    <Folder Include="Templates\Mapper\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Templates\Entity\" />
-    <Folder Include="Templates\Mapper\" />
+    <ProjectReference Include="..\DataToolkit.Library\DataToolkit.Library.csproj" />
   </ItemGroup>
 
 </Project>

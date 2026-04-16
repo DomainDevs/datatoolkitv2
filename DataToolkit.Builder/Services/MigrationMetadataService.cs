@@ -333,13 +333,13 @@ ORDER BY s.name, t.name, c.column_id;
             // columna nueva en destino
             descripcion = "Columna existe solo en destino (HUÉRFANA del origen)";
             conversion = "REVISAR USO";
-            proceso = "POSIBLE ELIMINACIÓN O AJUSTE";
+            proceso = "POSIBLE ELIMINACIÓN O AJUSTE DE TRANSFORMACION";
         }
         else if (source != null && target == null)
         {
             // nueva columna origen
             descripcion = "Columna nueva en origen (DEBE MIGRARSE)";
-            conversion = "AGREGAR EN DESTINO";
+            conversion = "AGREGAR EN DESTINO / POSIBLE MAPEO - TRANSFORMACION";
             proceso = "ALTER TABLE ADD COLUMN";
         }
         else if (source != null && target != null)

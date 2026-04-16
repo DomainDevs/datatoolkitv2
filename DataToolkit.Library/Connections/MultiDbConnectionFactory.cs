@@ -34,8 +34,13 @@ public class MultiDbConnectionFactory : IDbConnectionFactory
     /// <returns>IDbConnection abierta o lista para usar</returns>
     public IDbConnection CreateConnection(string alias = "MainSql")
     {
+        Console.WriteLine($"[MultiDbConnectionFactory] Alias solicitado: {alias}");
+
         if (!_config.TryGetValue(alias, out var entry))
             throw new InvalidOperationException($"No se encontró una configuración para el alias: '{alias}'");
+
+        Console.WriteLine($"[MultiDbConnectionFactory] Provider: {entry.provider}");
+        Console.WriteLine($"[MultiDbConnectionFactory] ConnectionString OK? {!string.IsNullOrEmpty(entry.connectionString)}");
 
         return entry.provider switch
         {
