@@ -1,110 +1,156 @@
 ﻿using DataToolkit.Library.Common;
 using DataToolkit.Library.Connections;
-using DataToolkit.Library.Fluent; // ✅ NUEVO
+using DataToolkit.Library.Fluent;
 using DataToolkit.Library.Repositories;
 using DataToolkit.Library.Sql;
 using DataToolkit.Library.StoredProcedures;
 using Serilog;
 using System.Data;
-using System.IO.Pipelines;
 
 namespace DataToolkit.Library.UnitOfWorkLayer;
 
+/// <summary>
+/// Implementación de la unidad de trabajo para gestionar transacciones y repositorios de forma centralizada.
+/// </summary>
 public class UnitOfWork : IUnitOfWork
 {
-    
     private readonly IDbConnection _connection;
     private IDbTransaction? _transaction;
     private bool _disposed;
     private readonly Dictionary<Type, object> _repositories = new();
-    //Logs
     private readonly DataToolkitOptions _options;
     private readonly ILogger _logger = Log.ForContext<UnitOfWork>();
 
-    public IStoredProcedureExecutor StoredProcedureExecutor { get; private set; }
-    public ISqlExecutor Sql { get; private set; }
-    public IFluentQuery Fluent { get; private set; } // ✅ NUEVO
+    /// <summary>
+    /// Ejecutor de procedimientos almacenados.
+    /// </summary>
+    public IStoredProcedureExecutor StoredProcedureExecutor { get; private set; } = null!;
 
-    // Prioridad: 1. Factory, 2. Identidad (Alias), 3. Configuración logs (Options)
+    /// <summary>
+    /// Ejecutor de consultas SQL crudas.
+    /// </summary>
+    public ISqlExecutor Sql { get; private set; } = null!;
+
+    /// <summary>
+    /// Motor de consultas fluidas (Fluent API).
+    /// </summary>
+    public IFluentQuery Fluent { get; private set; } = null!;
+
+    /// <summary>
+    /// Inicializa una nueva instancia del UnitOfWork con soporte para telemetría.
+    /// </summary>
+    /// <param name="factory">Fabrica de conexiones.</param>
+    /// <param name="dbAlias">Alias de la base de datos a conectar.</param>
+    /// <param name="options">Configuración de diagnóstico y rendimiento.</param>
     public UnitOfWork(IDbConnectionFactory factory, string dbAlias = "SqlServer", DataToolkitOptions? options = null)
     {
-        // 1. Identificar y Crear Conexión (Lo más importante)
+        _options = options ?? new DataToolkitOptions();
         _connection = factory.CreateConnection(dbAlias);
 
-        // 2. Inicializar Ejecutores base
-        Sql = new SqlExecutor(_connection);
-        StoredProcedureExecutor = new StoredProcedureExecutor(_connection);
-        Fluent = new FluentQuery(Sql);
+        // Inicialización de ejecutores (estado inicial sin transacción)
+        RefreshExecutors();
 
-        // 3. Cargar configuración de logs
-        _options = options ?? new DataToolkitOptions();
-
-        if (_options.EnableLogging)
-        {
-            _logger.Information("[{Prefix}] Motor listo para: {Alias}", _options.LogPrefix, dbAlias);
-        }
+        if (_options.Logging)
+            _logger.Information("[{Prefix}] Motor listo para: {Alias}", _options.Prefix, dbAlias);
     }
 
-    // Renombrado de GetRepository a Repository para cumplir la interfaz
+    /// <summary>
+    /// Obtiene o crea un repositorio genérico para la entidad especificada.
+    /// </summary>
     public IGenericRepository<T> Repository<T>() where T : class
     {
         var type = typeof(T);
         if (!_repositories.ContainsKey(type))
         {
-            if (_connection.State != ConnectionState.Open)
-                _connection.Open();
-
-            var repo = new GenericRepository<T>(_connection, _transaction);
-            _repositories[type] = repo;
+            if (_connection.State != ConnectionState.Open) _connection.Open();
+            _repositories[type] = new GenericRepository<T>(_connection, _transaction);
         }
         return (IGenericRepository<T>)_repositories[type];
     }
 
+    /// <summary>
+    /// Inicia una nueva transacción en la base de datos con monitoreo de rendimiento.
+    /// </summary>
     public void BeginTransaction()
     {
-        if (_connection.State != ConnectionState.Open)
+        var sw = ToolkitTelemetry.Iniciar(_options);
+        try
         {
-            _connection.Open();
+            if (_connection.State != ConnectionState.Open) _connection.Open();
+
+            _transaction = _connection.BeginTransaction();
+
+            // Re-sincroniza ejecutores para que utilicen la transacción actual
+            RefreshExecutors(_transaction);
+
+            ToolkitTelemetry.Finalizar(_logger, _options, "Apertura de Transacción", sw);
         }
-
-        _transaction = _connection.BeginTransaction();
-        StoredProcedureExecutor = new StoredProcedureExecutor(_connection, _transaction);
-        Sql = new SqlExecutor(_connection, _transaction);
-
-        if (_options.EnableLogging)
-            _logger.Warning("[{Prefix}] Transacción iniciada en base de datos.", _options.LogPrefix);
-
+        catch (Exception ex)
+        {
+            ToolkitTelemetry.Error(_logger, _options, "BeginTransaction", ex, sw);
+            throw;
+        }
     }
 
+    /// <summary>
+    /// Confirma los cambios realizados en la transacción actual.
+    /// </summary>
     public void Commit()
     {
-        _transaction?.Commit();
-        _transaction = null;
-        RefreshExecutors();
+        var sw = ToolkitTelemetry.Iniciar(_options);
+        try
+        {
+            _transaction?.Commit();
+            _transaction = null;
+            RefreshExecutors(); // Limpia la transacción de los ejecutores
 
-        if (_options.EnableLogging)
-            _logger.Information("[{Prefix}] Commit realizado correctamente.", _options.LogPrefix);
+            ToolkitTelemetry.Finalizar(_logger, _options, "Commit de cambios", sw);
+        }
+        catch (Exception ex)
+        {
+            ToolkitTelemetry.Error(_logger, _options, "Commit", ex, sw);
+            throw;
+        }
     }
 
+    /// <summary>
+    /// Revierte los cambios realizados en la transacción actual.
+    /// </summary>
     public void Rollback()
     {
-        _transaction?.Rollback();
-        _transaction = null;
-        RefreshExecutors();
+        var sw = ToolkitTelemetry.Iniciar(_options);
+        try
+        {
+            _transaction?.Rollback();
+            _transaction = null;
+            RefreshExecutors();
 
-        if (_options.EnableLogging)
-            _logger.Error("[{Prefix}] Rollback ejecutado: Los cambios fueron revertidos.", _options.LogPrefix);
+            ToolkitTelemetry.Finalizar(_logger, _options, "Rollback ejecutado", sw);
+        }
+        catch (Exception ex)
+        {
+            ToolkitTelemetry.Error(_logger, _options, "Rollback", ex, sw);
+            throw;
+        }
     }
 
-    private void RefreshExecutors()
+    /// <summary>
+    /// Sincroniza los ejecutores con el estado actual de la conexión y transacción.
+    /// </summary>
+    private void RefreshExecutors(IDbTransaction? transaction = null)
     {
-        StoredProcedureExecutor = new StoredProcedureExecutor(_connection);
-        Sql = new SqlExecutor(_connection);
+        Sql = new SqlExecutor(_connection, transaction);
+        StoredProcedureExecutor = new StoredProcedureExecutor(_connection, transaction);
+        Fluent = new FluentQuery(Sql);
     }
 
+    // Soporte Asíncrono
     public Task CommitAsync() { Commit(); return Task.CompletedTask; }
     public Task RollbackAsync() { Rollback(); return Task.CompletedTask; }
 
+    /// <summary>
+    /// Libera los recursos de conexión y transacciones activas.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;
@@ -112,8 +158,8 @@ public class UnitOfWork : IUnitOfWork
         _transaction?.Dispose();
         _connection?.Dispose();
 
-        if (_options.EnableLogging)
-            _logger.Debug("[{Prefix}] Recursos de conexión liberados.", _options.LogPrefix);
+        if (_options.Logging)
+            _logger.Debug("[{Prefix}] Recursos liberados correctamente.", _options.Prefix);
 
         _disposed = true;
         GC.SuppressFinalize(this);
