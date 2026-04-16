@@ -142,6 +142,9 @@ public class UnitOfWork : IUnitOfWork
         Sql = new SqlExecutor(_connection, transaction);
         StoredProcedureExecutor = new StoredProcedureExecutor(_connection, transaction);
         Fluent = new FluentQuery(Sql);
+
+        // Limpiar repositorios para que se re-instancien con la transacción correcta
+        _repositories.Clear();
     }
 
     // Soporte Asíncrono

@@ -1,9 +1,9 @@
-﻿using DataToolkit.Library.Connections;
-using DataToolkit.Library.Context;
-using DataToolkit.Library.Fluent;
-using DataToolkit.Library.Sql;
+﻿using DataToolkit.Library.Common;
+using DataToolkit.Library.Connections;
 using DataToolkit.Library.UnitOfWorkLayer;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 
 namespace DataToolkit.Library.Extensions
 {
@@ -14,6 +14,7 @@ namespace DataToolkit.Library.Extensions
         /// </summary>
         public static IServiceCollection AddDataToolkitSqlServer(
             this IServiceCollection services,
+            IConfiguration configuration,
             string connectionString,
             string alias = "SqlServer")
         {
