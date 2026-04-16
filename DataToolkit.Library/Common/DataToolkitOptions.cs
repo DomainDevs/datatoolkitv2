@@ -1,21 +1,37 @@
 ﻿namespace DataToolkit.Library.Common;
 
+/// <summary>
+/// Configuración global de comportamiento, diagnóstico y rendimiento para DataToolkit.
+/// </summary>
 public sealed class DataToolkitOptions
 {
+    /// <summary>
+    /// Nombre de la sección en el archivo de configuración (appsettings.json).
+    /// </summary>
     public const string SectionName = "DataToolkit";
 
-    // "UseLogs" o "Logging" es suficiente y mucho más corto
+    /// <summary>
+    /// Habilita o deshabilita el logueo de eventos y flujo de la librería.
+    /// </summary>
     public bool Logging { get; set; } = true;
 
-    // "Metrics" o "Trace" resume perfectamente el rastreo de rendimiento
+    /// <summary>
+    /// Habilita el rastreo de métricas de rendimiento (Stopwatch) para cada operación.
+    /// </summary>
     public bool Metrics { get; set; } = true;
 
-    // "SlowMs" es directo: el límite de milisegundos para lo lento
+    /// <summary>
+    /// Define el umbral en milisegundos para marcar una operación como "Lenta" en los logs.
+    /// </summary>
     public int SlowMs { get; set; } = 500;
 
-    // "ShowParams" para la seguridad de los parámetros SQL
+    /// <summary>
+    /// Indica si se deben incluir los parámetros SQL en los logs de error (Cuidado con datos sensibles).
+    /// </summary>
     public bool ShowParams { get; set; } = false;
 
-    // "Prefix" ya se entiende que es para el log por el contexto
+    /// <summary>
+    /// Prefijo que aparecerá en los logs para identificar los mensajes de la librería.
+    /// </summary>
     public string Prefix { get; set; } = "DataToolkit";
 }
