@@ -1,7 +1,8 @@
 ﻿using DataToolkit.Library.Connections;
+using DataToolkit.Library.Context;
+using DataToolkit.Library.Fluent;
 using DataToolkit.Library.Sql;
 using DataToolkit.Library.UnitOfWorkLayer;
-using DataToolkit.Library.Fluent;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataToolkit.Library.Extensions
@@ -16,23 +17,16 @@ namespace DataToolkit.Library.Extensions
             string connectionString,
             string alias = "SqlServer")
         {
+            // 1. La fábrica es Singleton
             services.AddSingleton<IDbConnectionFactory>(_ =>
                 new MultiDbConnectionFactory(new Dictionary<string, (string, DatabaseProvider)>
                 {
-                    { alias, (connectionString, DatabaseProvider.SqlServer) }
+            { alias, (connectionString, DatabaseProvider.SqlServer) }
                 })
             );
 
-            services.AddScoped<ISqlExecutor>(sp =>
-            {
-                var factory = sp.GetRequiredService<IDbConnectionFactory>();
-                var conn = factory.CreateConnection(alias);
-                return new SqlExecutor(conn);
-            });
-
-            services.AddScoped<IFluentQuery, FluentQuery>();
-
-            services.AddScoped(sp =>
+            // 2. El UnitOfWork es la UNICA entrada Scoped
+            services.AddScoped<IUnitOfWork>(sp =>
                 new UnitOfWork(sp.GetRequiredService<IDbConnectionFactory>(), alias)
             );
 

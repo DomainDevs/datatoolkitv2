@@ -1,51 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using DataToolkit.Library.Connections;
+﻿using DataToolkit.Library.Fluent;
 using DataToolkit.Library.Repositories;
 using DataToolkit.Library.Sql;
 using DataToolkit.Library.StoredProcedures;
 using DataToolkit.Library.UnitOfWorkLayer;
+using System.Collections.Concurrent; // Para Thread-safety
 
 namespace DataToolkit.Library.Context;
 
 public sealed class DataContext : IDisposable
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly Dictionary<Type, object> _repositoryCache = new();
+    // Cambiamos Dictionary por ConcurrentDictionary para seguridad total
+    private readonly ConcurrentDictionary<Type, object> _repositoryCache = new();
+    private bool _disposed;
 
-    public DataContext(IDbConnectionFactory connectionFactory)
+    public DataContext(IUnitOfWork unitOfWork)
     {
-        // UnitOfWork ya crea SqlExecutor, SP executor y maneja la conexión
-        _unitOfWork = new UnitOfWork(connectionFactory);
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
-    // Exponer SQL y Stored Procedures vía UnitOfWork
-    public SqlExecutor Sql => _unitOfWork.Sql;
+    // Herramientas core
+    public ISqlExecutor Sql => _unitOfWork.Sql;
+    public IFluentQuery Fluent => _unitOfWork.Fluent;
     public IStoredProcedureExecutor StoredProcedures => _unitOfWork.StoredProcedureExecutor;
 
-    // Obtener repositorio genérico
+    // Repositorio con GetOrAdd para máxima eficiencia y seguridad
     public IGenericRepository<T> Repository<T>() where T : class
     {
-        var type = typeof(T);
-        if (!_repositoryCache.TryGetValue(type, out var repo))
-        {
-            repo = _unitOfWork.GetRepository<T>();
-            _repositoryCache[type] = repo;
-        }
-        return (IGenericRepository<T>)repo;
+        return (IGenericRepository<T>)_repositoryCache.GetOrAdd(typeof(T), _ =>
+            _unitOfWork.Repository<T>());
     }
 
-    // Manejo de transacciones
+    // Transacciones con validación de estado
     public void BeginTransaction() => _unitOfWork.BeginTransaction();
     public void Commit() => _unitOfWork.Commit();
-    public Task CommitAsync() => _unitOfWork.CommitAsync();
     public void Rollback() => _unitOfWork.Rollback();
-    public Task RollbackAsync() => _unitOfWork.RollbackAsync();
 
+    // Implementación robusta de IDisposable
     public void Dispose()
     {
+        if (_disposed) return;
+
         _repositoryCache.Clear();
         _unitOfWork.Dispose();
+        _disposed = true;
     }
 }
