@@ -46,7 +46,7 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     /// <param name="connection">Conexión a la base de datos</param>
     /// <param name="transaction">Transacción activa (opcional)</param>
     /// <param name="commandTimeout">Tiempo máximo en segundos para ejecutar el comando (opcional)</param>
-    public SqlExecutor(IDbConnection connection, IDbTransaction? transaction = null, int? commandTimeout = null, ILogger logger = null)
+    public SqlExecutor(IDbConnection connection, IDbTransaction? transaction = null, int? commandTimeout = null, ILogger? logger = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _transaction = transaction;
