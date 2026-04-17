@@ -16,9 +16,7 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
 
     private bool _disposed;
 
-    // =========================================================
-    // CONSTRUCTOR LEGACY (COMPATIBLE)
-    // =========================================================
+    // ---------------- CONSTRUCTOR LEGACY (COMPATIBLE) ----------------
     public StoredProcedureExecutor(
         IDbConnection connection,
         IDbTransaction? transaction = null,
@@ -33,9 +31,7 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         _logger = logger ?? Log.Logger;
     }
 
-    // =========================================================
-    // CONSTRUCTOR MODERNO (RECOMENDADO)
-    // =========================================================
+    // ---------------- CONSTRUCTOR MODERNO (RECOMENDADO) ----------------
     public StoredProcedureExecutor(
         IDbConnection connection,
         Func<IDbTransaction?> transactionProvider,
@@ -43,6 +39,7 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         ILogger? logger = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+
         _transactionProvider = transactionProvider ?? (() => null);
 
         _defaultTimeout = defaultTimeout;
@@ -53,7 +50,7 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     // CORE
     // =========================================================
 
-    private IDbTransaction? Tx => _transactionProvider?.Invoke();
+    private IDbTransaction? Tx => _transactionProvider();
 
     private void Validate(string procedure)
     {
@@ -62,7 +59,7 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     }
 
     // =========================================================
-    // EXECUTE DATASET
+    // DATASET
     // =========================================================
 
     public DataSet ExecuteDataSet(string procedure, IEnumerable<IDbDataParameter> parameters)
@@ -71,8 +68,10 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         {
             using var cmd = BuildCommand(procedure, parameters);
             var ds = new DataSet();
+
             var adapter = CreateAdapter(cmd);
             adapter.Fill(ds);
+
             return ds;
         }, procedure);
     }
@@ -85,14 +84,20 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     }
 
     // =========================================================
-    // EXECUTE DATATABLE
+    // DATATABLE
     // =========================================================
 
     public DataTable ExecuteDataTable(string procedure, IEnumerable<IDbDataParameter> parameters)
     {
         return ExecuteSafe(() =>
-            ExecuteDataSet(procedure, parameters).Tables[0],
-            procedure);
+        {
+            var ds = ExecuteDataSet(procedure, parameters);
+
+            if (ds.Tables.Count == 0)
+                return new DataTable();
+
+            return ds.Tables[0];
+        }, procedure);
     }
 
     public async Task<DataTable> ExecuteDataTableAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
@@ -100,7 +105,10 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         return await ExecuteSafeAsync(async () =>
         {
             var ds = await ExecuteDataSetAsync(procedure, parameters);
-            return ds.Tables[0];
+
+            return ds.Tables.Count > 0
+                ? ds.Tables[0]
+                : new DataTable();
         }, procedure);
     }
 
@@ -134,12 +142,12 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         {
             SqlCommand sql => new SqlDataAdapter(sql),
             AseCommand ase => new AseDataAdapter(ase),
-            _ => throw new NotSupportedException("Comando no soportado.")
+            _ => throw new NotSupportedException("Unsupported command type.")
         };
     }
 
     // =========================================================
-    // SAFE WRAPPERS (ALINEADOS CON SQL EXECUTOR)
+    // SAFE WRAPPERS
     // =========================================================
 
     private T ExecuteSafe<T>(Func<T> func, string procedure)
@@ -156,7 +164,7 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
                 procedure);
 
             throw new SqlExecutorException(
-                $"Error al ejecutar procedimiento '{procedure}'",
+                $"Error executing stored procedure '{procedure}'",
                 ex,
                 procedure);
         }
@@ -176,23 +184,24 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
                 procedure);
 
             throw new SqlExecutorException(
-                $"Error asincrónico al ejecutar procedimiento '{procedure}'",
+                $"Async error executing stored procedure '{procedure}'",
                 ex,
                 procedure);
         }
     }
 
     // =========================================================
-    // DISPOSE
+    // DISPOSE (IMPORTANTE: NO ROMPER UNIT OF WORK)
     // =========================================================
 
     public void Dispose()
     {
         if (_disposed) return;
 
-        _connection?.Dispose();
-        _disposed = true;
+        // ⚠️ SOLO liberar si este executor es dueño (no en UoW normalmente)
+        // En UnitOfWork la connection se libera ahí, no aquí
 
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }
