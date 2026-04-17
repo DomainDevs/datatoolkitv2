@@ -10,6 +10,7 @@ namespace DataToolkit.Library.Fluent;
 public sealed class FluentQuery : IFluentQuery
 {
     private readonly List<SqlNode> _nodes = new();
+    private readonly List<SqlNode> _whereNodes = new();
 
     private readonly Dictionary<string, object?> _parameters =
         new(StringComparer.OrdinalIgnoreCase);
@@ -26,7 +27,6 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery Select(params string[] columns)
     {
         EnsureNotBuilt();
-
         _nodes.Add(new SqlSelect(columns?.ToList() ?? new List<string>()));
         return this;
     }
@@ -35,37 +35,36 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery From(params string[] tables)
     {
         EnsureNotBuilt();
-
         _nodes.Add(new SqlFrom(tables?.ToList() ?? new List<string>()));
         return this;
     }
 
-    // ---------------- JOIN (FIXED - STRING BASED) ----------------
+    // ---------------- JOIN ----------------
     public IFluentQuery InnerJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin("INNER JOIN", table, on));
+        _nodes.Add(new SqlJoin($"INNER JOIN {table} ON {on}"));
         return this;
     }
 
     public IFluentQuery LeftJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin("LEFT JOIN", table, on));
+        _nodes.Add(new SqlJoin($"LEFT JOIN {table} ON {on}"));
         return this;
     }
 
     public IFluentQuery RightJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin("RIGHT JOIN", table, on));
+        _nodes.Add(new SqlJoin($"RIGHT JOIN {table} ON {on}"));
         return this;
     }
 
     public IFluentQuery FullJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin("FULL JOIN", table, on));
+        _nodes.Add(new SqlJoin($"FULL JOIN {table} ON {on}"));
         return this;
     }
 
@@ -75,25 +74,13 @@ public sealed class FluentQuery : IFluentQuery
         EnsureNotBuilt();
 
         Merge(parameters);
-
-        _nodes.Add(new SqlRaw(sql));
-        return this;
-    }
-
-    public IFluentQuery Where<T>(Expression<Func<T, bool>> expr)
-    {
-        EnsureNotBuilt();
-
-        var node = ExpressionParser.Parse(expr.Body);
-        _nodes.Add(node);
+        _whereNodes.Add(new SqlRaw(sql));
 
         return this;
     }
 
     public IFluentQuery WhereIf(bool condition, string sql, object? parameters = null)
     {
-        EnsureNotBuilt();
-
         if (!condition)
             return this;
 
@@ -104,7 +91,6 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery GroupBy(params string[] columns)
     {
         EnsureNotBuilt();
-
         _nodes.Add(new SqlGroupBy(columns?.ToList() ?? new List<string>()));
         return this;
     }
@@ -113,7 +99,6 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery OrderBy(params string[] columns)
     {
         EnsureNotBuilt();
-
         _nodes.Add(new SqlOrderBy(columns?.ToList() ?? new List<string>()));
         return this;
     }
@@ -134,7 +119,7 @@ public sealed class FluentQuery : IFluentQuery
 
     // ---------------- INTERNAL ----------------
     internal IReadOnlyList<SqlNode> Nodes => _nodes;
-
+    internal IReadOnlyList<SqlNode> WhereNodes => _whereNodes;
     internal IReadOnlyDictionary<string, object?> Parameters => _parameters;
 
     // ---------------- PARAMS ----------------

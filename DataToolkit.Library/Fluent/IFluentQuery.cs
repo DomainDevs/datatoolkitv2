@@ -13,7 +13,6 @@
         IFluentQuery Select(params string[] columns);
         string ToSql();
         IFluentQuery Where(string sql, object? parameters = null);
-        IFluentQuery Where<T>(System.Linq.Expressions.Expression<Func<T, bool>> expr);
         IFluentQuery WhereIf(bool condition, string sql, object? parameters = null);
     }
 }
