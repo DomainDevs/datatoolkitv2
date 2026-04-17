@@ -3,35 +3,36 @@ using DataToolkit.Library.Fluent.Sql;
 
 namespace DataToolkit.Library.Fluent.Parsing;
 
-internal static class ExpressionParser
+public static class ExpressionParser
 {
     public static SqlNode Parse(Expression expr)
     {
         return expr switch
         {
-            BinaryExpression b => ParseBinary(b),
+            BinaryExpression b => new SqlBinary(
+                Parse(b.Left),
+                GetOp(b.NodeType),
+                Parse(b.Right)
+            ),
+
             MemberExpression m => new SqlRaw(m.Member.Name),
-            ConstantExpression c => new SqlParameter("@p" + Guid.NewGuid().ToString("N")[..6], c.Value),
-            _ => throw new NotSupportedException(expr.NodeType.ToString())
+
+            ConstantExpression c => new SqlParameter(c.Value?.ToString() ?? "NULL"),
+
+            _ => new SqlRaw(expr.ToString())
         };
     }
 
-    private static SqlNode ParseBinary(BinaryExpression b)
+    private static string GetOp(ExpressionType type)
     {
-        var op = b.NodeType switch
+        return type switch
         {
-            ExpressionType.Equal => "=",
             ExpressionType.AndAlso => "AND",
             ExpressionType.OrElse => "OR",
+            ExpressionType.Equal => "=",
             ExpressionType.GreaterThan => ">",
             ExpressionType.LessThan => "<",
-            _ => throw new NotSupportedException(b.NodeType.ToString())
+            _ => throw new NotSupportedException($"Operator not supported: {type}")
         };
-
-        return new SqlBinary(
-            op,
-            Parse(b.Left),
-            Parse(b.Right)
-        );
     }
 }

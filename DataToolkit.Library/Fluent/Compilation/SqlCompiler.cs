@@ -1,48 +1,31 @@
-﻿using DataToolkit.Library.Fluent;
+﻿using System.Text;
 using DataToolkit.Library.Fluent.Sql;
-using System.Text;
 
 namespace DataToolkit.Library.Fluent.Compilation;
 
 internal sealed class SqlCompiler
 {
-    public string Compile(FluentQuery q)
-    {
-        var sb = new StringBuilder();
 
-        foreach (var node in q.Nodes)
-        {
-            Render(sb, node);
-            sb.Append(' ');
-        }
-
-        return sb.ToString().Trim();
-    }
 
     private void Render(StringBuilder sb, SqlNode node)
     {
         switch (node)
         {
             case SqlRaw r:
-                sb.Append(r.Text);
+                sb.Append("(").Append(r.Text).Append(")");
                 break;
 
             case SqlBinary b:
-                sb.Append('(');
+                sb.Append("(");
                 Render(sb, b.Left);
-                sb.Append(' ').Append(b.Op).Append(' ');
+                sb.Append(" ").Append(b.Op).Append(" ");
                 Render(sb, b.Right);
-                sb.Append(')');
+                sb.Append(")");
                 break;
 
-            case SqlGroup g:
-                sb.Append('(');
-                Render(sb, g.Node);
-                sb.Append(')');
-                break;
-
-            case SqlParameter p:
-                sb.Append(p.Name);
+            case SqlGroupBy g:
+                sb.Append("GROUP BY ")
+                  .Append(string.Join(", ", g.Columns));
                 break;
         }
     }

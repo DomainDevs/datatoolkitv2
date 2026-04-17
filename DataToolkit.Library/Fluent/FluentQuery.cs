@@ -1,87 +1,103 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using System.Reflection;
 using DataToolkit.Library.Fluent.Sql;
-using DataToolkit.Library.Fluent.Compilation;
 using DataToolkit.Library.Fluent.Parsing;
+using DataToolkit.Library.Fluent.Compilation;
 
 namespace DataToolkit.Library.Fluent;
 
 public sealed class FluentQuery : IFluentQuery
 {
-    private readonly List<string> _select = new();
-    private readonly HashSet<string> _selectSet = new(StringComparer.OrdinalIgnoreCase);
+    private SqlSelect? _select;
+    private SqlFrom? _from;
 
-    private readonly List<string> _from = new();
-    private readonly List<string> _joins = new();
-
+    private readonly List<SqlJoin> _joins = new();
     private readonly List<SqlNode> _where = new();
-    private readonly List<string> _groupBy = new();
-    private readonly List<string> _orderBy = new();
+    private SqlGroupBy? _groupBy;
+    private SqlOrderBy? _orderBy;
 
-    private readonly Dictionary<string, object?> _parameters = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _paramKeys = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, object?> _parameters =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly HashSet<string> _paramKeys =
+        new(StringComparer.OrdinalIgnoreCase);
 
     private bool _built;
     private string? _cachedSql;
 
-    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = new();
+    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _cache = new();
 
     // ---------------- SELECT ----------------
     public IFluentQuery Select(params string[] columns)
     {
         EnsureNotBuilt();
-
-        foreach (var c in columns)
-        {
-            if (string.IsNullOrWhiteSpace(c)) continue;
-
-            if (_selectSet.Add(c))
-                _select.Add(c);
-        }
-
+        _select = new SqlSelect(columns.Where(x => !string.IsNullOrWhiteSpace(x)).ToList());
         return this;
     }
 
+    // ---------------- FROM ----------------
     public IFluentQuery From(string table)
     {
         EnsureNotBuilt();
-
-        _from.Add(table);
+        _from = new SqlFrom(new List<string> { table });
         return this;
     }
 
-    // ---------------- WHERE ----------------
+    // ---------------- JOIN ----------------
+    public IFluentQuery Join(string sql)
+    {
+        EnsureNotBuilt();
+        _joins.Add(new SqlJoin(sql));
+        return this;
+    }
 
-    public IFluentQuery Where(string condition, object? parameters = null)
+    // ---------------- WHERE RAW ----------------
+    public IFluentQuery Where(string sql, object? parameters = null)
     {
         EnsureNotBuilt();
 
-        MergeParameters(parameters);
-
-        _where.Add(new SqlRaw(condition));
+        Merge(parameters);
+        _where.Add(new SqlRaw(sql));
 
         return this;
     }
 
-    public IFluentQuery Where<T>(System.Linq.Expressions.Expression<Func<T, bool>> expr)
+    // ---------------- WHERE EXPRESSIONS ----------------
+    public IFluentQuery Where<T>(Expression<Func<T, bool>> expr)
     {
         EnsureNotBuilt();
 
-        var node = ExpressionParser.Parse(expr.Body);
-        _where.Add(node);
+        _where.Add(ExpressionParser.Parse(expr.Body));
+        return this;
+    }
 
+    // ---------------- GROUP BY ----------------
+    public IFluentQuery GroupBy(params string[] columns)
+    {
+        EnsureNotBuilt();
+        _groupBy = new SqlGroupBy(columns.ToList());
+        return this;
+    }
+
+    // ---------------- ORDER BY ----------------
+    public IFluentQuery OrderBy(params string[] columns)
+    {
+        EnsureNotBuilt();
+        _orderBy = new SqlOrderBy(columns.ToList());
         return this;
     }
 
     // ---------------- BUILD ----------------
-
     public (string Sql, object Parameters) Build()
     {
         if (_built)
             return (_cachedSql!, _parameters);
 
-        var compiler = new SqlCompiler();
+        if (_from is null)
+            throw new InvalidOperationException("FROM is required.");
 
+        var compiler = new SqlCompiler();
         _cachedSql = compiler.Compile(this);
 
         _built = true;
@@ -92,22 +108,20 @@ public sealed class FluentQuery : IFluentQuery
     public string ToSql() => Build().Sql;
 
     // ---------------- INTERNAL ACCESS ----------------
-
-    internal IReadOnlyList<string> Select => _select;
-    internal IReadOnlyList<string> From => _from;
-    internal IReadOnlyList<string> Joins => _joins;
+    internal SqlSelect? SelectNode => _select;
+    internal SqlFrom FromNode => _from!;
+    internal IReadOnlyList<SqlJoin> Joins => _joins;
     internal IReadOnlyList<SqlNode> WhereNodes => _where;
-    internal IReadOnlyList<string> GroupBy => _groupBy;
-    internal IReadOnlyList<string> OrderBy => _orderBy;
+    internal SqlGroupBy? GroupByNode => _groupBy;
+    internal SqlOrderBy? OrderByNode => _orderBy;
 
     // ---------------- PARAMS ----------------
-
-    private void MergeParameters(object? parameters)
+    private void Merge(object? parameters)
     {
         if (parameters is null) return;
 
         var type = parameters.GetType();
-        var props = _propertyCache.GetOrAdd(type, t => t.GetProperties());
+        var props = _cache.GetOrAdd(type, t => t.GetProperties());
 
         foreach (var p in props)
         {
