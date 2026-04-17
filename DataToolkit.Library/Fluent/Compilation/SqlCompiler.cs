@@ -28,7 +28,12 @@ internal sealed class SqlCompiler
         // ---------------- JOIN ----------------
         foreach (var join in q.Nodes.OfType<SqlJoin>())
         {
-            sb.AppendLine(join.Sql);
+            sb.Append(join.Type);
+            sb.Append(" ");
+            sb.Append(join.Table);
+            sb.Append(" ON ");
+            sb.Append(join.On);
+            sb.AppendLine();
         }
 
         // ---------------- WHERE ----------------

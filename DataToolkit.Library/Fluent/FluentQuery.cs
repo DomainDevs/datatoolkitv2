@@ -43,28 +43,28 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery InnerJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"INNER JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin("INNER JOIN", table, on));
         return this;
     }
 
     public IFluentQuery LeftJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"LEFT JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin("LEFT JOIN", table, on));
         return this;
     }
 
     public IFluentQuery RightJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"RIGHT JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin("RIGHT JOIN", table, on));
         return this;
     }
 
     public IFluentQuery FullJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"FULL JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin("FULL JOIN", table, on));
         return this;
     }
 
