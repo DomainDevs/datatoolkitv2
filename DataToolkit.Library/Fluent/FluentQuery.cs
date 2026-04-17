@@ -1,21 +1,15 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
-using DataToolkit.Library.Fluent.Sql;
 using DataToolkit.Library.Fluent.Parsing;
+using DataToolkit.Library.Fluent.Sql;
 using DataToolkit.Library.Fluent.Compilation;
 
 namespace DataToolkit.Library.Fluent;
 
 public sealed class FluentQuery : IFluentQuery
 {
-    private SqlSelect? _select;
-    private SqlFrom? _from;
-
-    private readonly List<SqlJoin> _joins = new();
-    private readonly List<SqlNode> _where = new();
-    private SqlGroupBy? _groupBy;
-    private SqlOrderBy? _orderBy;
+    private readonly List<SqlNode> _nodes = new();
 
     private readonly Dictionary<string, object?> _parameters =
         new(StringComparer.OrdinalIgnoreCase);
@@ -32,15 +26,17 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery Select(params string[] columns)
     {
         EnsureNotBuilt();
-        _select = new SqlSelect(columns.Where(x => !string.IsNullOrWhiteSpace(x)).ToList());
+
+        _nodes.Add(new SqlSelect(columns?.ToList() ?? new List<string>()));
         return this;
     }
 
     // ---------------- FROM ----------------
-    public IFluentQuery From(string table)
+    public IFluentQuery From(params string[] tables)
     {
         EnsureNotBuilt();
-        _from = new SqlFrom(new List<string> { table });
+
+        _nodes.Add(new SqlFrom(tables?.ToList() ?? new List<string>()));
         return this;
     }
 
@@ -48,27 +44,70 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery Join(string sql)
     {
         EnsureNotBuilt();
-        _joins.Add(new SqlJoin(sql));
+        _nodes.Add(new SqlJoin(sql));
         return this;
     }
 
-    // ---------------- WHERE RAW ----------------
+    public IFluentQuery InnerJoin(string table, string on)
+    {
+        EnsureNotBuilt();
+        _nodes.Add(new SqlJoin($"INNER JOIN {table} ON {on}"));
+        return this;
+    }
+
+    public IFluentQuery LeftJoin(string table, string on)
+    {
+        EnsureNotBuilt();
+        _nodes.Add(new SqlJoin($"LEFT JOIN {table} ON {on}"));
+        return this;
+    }
+
+    public IFluentQuery RightJoin(string table, string on)
+    {
+        EnsureNotBuilt();
+        _nodes.Add(new SqlJoin($"RIGHT JOIN {table} ON {on}"));
+        return this;
+    }
+
+    public IFluentQuery FullJoin(string table, string on)
+    {
+        EnsureNotBuilt();
+        _nodes.Add(new SqlJoin($"FULL JOIN {table} ON {on}"));
+        return this;
+    }
+
+    // ---------------- WHERE ----------------
     public IFluentQuery Where(string sql, object? parameters = null)
     {
         EnsureNotBuilt();
 
         Merge(parameters);
-        _where.Add(new SqlRaw(sql));
 
+        _nodes.Add(new SqlRaw(sql));
         return this;
     }
 
-    // ---------------- WHERE EXPRESSIONS ----------------
     public IFluentQuery Where<T>(Expression<Func<T, bool>> expr)
     {
         EnsureNotBuilt();
 
-        _where.Add(ExpressionParser.Parse(expr.Body));
+        var node = ExpressionParser.Parse(expr.Body);
+        _nodes.Add(node);
+
+        return this;
+    }
+
+    public IFluentQuery WhereIf(bool condition, string sql, object? parameters = null)
+    {
+        EnsureNotBuilt();
+
+        if (!condition)
+            return this;
+
+        Merge(parameters);
+
+        _nodes.Add(new SqlRaw(sql));
+
         return this;
     }
 
@@ -76,7 +115,8 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery GroupBy(params string[] columns)
     {
         EnsureNotBuilt();
-        _groupBy = new SqlGroupBy(columns.ToList());
+
+        _nodes.Add(new SqlGroupBy(columns?.ToList() ?? new List<string>()));
         return this;
     }
 
@@ -84,7 +124,8 @@ public sealed class FluentQuery : IFluentQuery
     public IFluentQuery OrderBy(params string[] columns)
     {
         EnsureNotBuilt();
-        _orderBy = new SqlOrderBy(columns.ToList());
+
+        _nodes.Add(new SqlOrderBy(columns?.ToList() ?? new List<string>()));
         return this;
     }
 
@@ -94,12 +135,7 @@ public sealed class FluentQuery : IFluentQuery
         if (_built)
             return (_cachedSql!, _parameters);
 
-        if (_from is null)
-            throw new InvalidOperationException("FROM is required.");
-
-        var compiler = new SqlCompiler();
-        _cachedSql = compiler.Compile(this);
-
+        _cachedSql = new SqlCompiler().Compile(this);
         _built = true;
 
         return (_cachedSql, _parameters);
@@ -107,13 +143,10 @@ public sealed class FluentQuery : IFluentQuery
 
     public string ToSql() => Build().Sql;
 
-    // ---------------- INTERNAL ACCESS ----------------
-    internal SqlSelect? SelectNode => _select;
-    internal SqlFrom FromNode => _from!;
-    internal IReadOnlyList<SqlJoin> Joins => _joins;
-    internal IReadOnlyList<SqlNode> WhereNodes => _where;
-    internal SqlGroupBy? GroupByNode => _groupBy;
-    internal SqlOrderBy? OrderByNode => _orderBy;
+    // ---------------- INTERNAL ----------------
+    internal IReadOnlyList<SqlNode> Nodes => _nodes;
+
+    internal IReadOnlyDictionary<string, object?> Parameters => _parameters;
 
     // ---------------- PARAMS ----------------
     private void Merge(object? parameters)

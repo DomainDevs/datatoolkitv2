@@ -15,9 +15,14 @@ public static class ExpressionParser
                 Parse(b.Right)
             ),
 
-            MemberExpression m => new SqlRaw(m.Member.Name),
+            MemberExpression m => new SqlRaw($"[{m.Member.Name}]"),
 
-            ConstantExpression c => new SqlParameter(c.Value?.ToString() ?? "NULL"),
+            ConstantExpression c => new SqlParameter(
+                $"@p{Guid.NewGuid():N}",
+                c.Value
+            ),
+
+            UnaryExpression u => Parse(u.Operand),
 
             _ => new SqlRaw(expr.ToString())
         };
@@ -32,6 +37,8 @@ public static class ExpressionParser
             ExpressionType.Equal => "=",
             ExpressionType.GreaterThan => ">",
             ExpressionType.LessThan => "<",
+            ExpressionType.GreaterThanOrEqual => ">=",
+            ExpressionType.LessThanOrEqual => "<=",
             _ => throw new NotSupportedException($"Operator not supported: {type}")
         };
     }
