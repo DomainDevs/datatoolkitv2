@@ -6,6 +6,7 @@ using DataToolkit.Library.Sql;
 using DataToolkit.Library.StoredProcedures;
 using Serilog;
 using System.Data;
+using Microsoft.Extensions.Options; // Asegúrate de tener este using
 
 namespace DataToolkit.Library.UnitOfWorkLayer;
 
@@ -42,12 +43,15 @@ public class UnitOfWork : IUnitOfWork
     /// <param name="factory">Fabrica de conexiones.</param>
     /// <param name="dbAlias">Alias de la base de datos a conectar.</param>
     /// <param name="options">Configuración de diagnóstico y rendimiento.</param>
-    public UnitOfWork(IDbConnectionFactory factory, string dbAlias = "SqlServer", DataToolkitOptions? options = null)
+    public UnitOfWork(
+        IDbConnectionFactory factory,
+        string dbAlias = "SqlServer",
+        IOptions<DataToolkitOptions>? options = null) // 👈 CAMBIO AQUÍ: Usar IOptions
     {
-        _options = options ?? new DataToolkitOptions();
+        // .Value es lo que extrae la clase mapeada desde el JSON
+        _options = options?.Value ?? new DataToolkitOptions();
         _connection = factory.CreateConnection(dbAlias);
 
-        // Inicialización de ejecutores (estado inicial sin transacción)
         RefreshExecutors();
 
         if (_options.Logging)
