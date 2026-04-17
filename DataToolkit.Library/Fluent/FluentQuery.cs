@@ -40,32 +40,32 @@ public sealed class FluentQuery : IFluentQuery
         return this;
     }
 
-    // ---------------- JOIN ----------------
-    public IFluentQuery InnerJoin(string table, Expression<Func<bool>> on)
+    // ---------------- JOIN (FIXED - STRING BASED) ----------------
+    public IFluentQuery InnerJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin(JoinType.Inner, table, ExpressionParser.Parse(on.Body)));
+        _nodes.Add(new SqlJoin("INNER JOIN", table, on));
         return this;
     }
 
-    public IFluentQuery LeftJoin(string table, Expression<Func<bool>> on)
+    public IFluentQuery LeftJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin(JoinType.Left, table, ExpressionParser.Parse(on.Body)));
+        _nodes.Add(new SqlJoin("LEFT JOIN", table, on));
         return this;
     }
 
-    public IFluentQuery RightJoin(string table, Expression<Func<bool>> on)
+    public IFluentQuery RightJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin(JoinType.Right, table, ExpressionParser.Parse(on.Body)));
+        _nodes.Add(new SqlJoin("RIGHT JOIN", table, on));
         return this;
     }
 
-    public IFluentQuery FullJoin(string table, Expression<Func<bool>> on)
+    public IFluentQuery FullJoin(string table, string on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin(JoinType.Full, table, ExpressionParser.Parse(on.Body)));
+        _nodes.Add(new SqlJoin("FULL JOIN", table, on));
         return this;
     }
 
