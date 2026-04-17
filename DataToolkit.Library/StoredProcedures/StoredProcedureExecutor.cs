@@ -13,7 +13,6 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     private readonly Func<IDbTransaction?> _transactionProvider;
     private readonly int? _defaultTimeout;
     private readonly ILogger _logger;
-
     private bool _disposed;
 
     public StoredProcedureExecutor(
@@ -33,7 +32,8 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     // ---------------- CORE ----------------
 
     public DataSet ExecuteDataSet(string procedure, IEnumerable<IDbDataParameter> parameters)
-        => ExecuteSafe(() =>
+    {
+        return ExecuteSafe(() =>
         {
             using var cmd = BuildCommand(procedure, parameters);
             var ds = new DataSet();
@@ -41,37 +41,41 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
             adapter.Fill(ds);
             return ds;
         }, procedure);
+    }
 
     public Task<DataSet> ExecuteDataSetAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
-        => ExecuteSafeAsync(() =>
+    {
+        return ExecuteSafeAsync(() =>
             Task.Run(() => ExecuteDataSet(procedure, parameters)),
             procedure);
+    }
 
     public DataTable ExecuteDataTable(string procedure, IEnumerable<IDbDataParameter> parameters)
-        => ExecuteSafe(() =>
-        {
-            var ds = ExecuteDataSet(procedure, parameters);
-            return ds.Tables.Count > 0 ? ds.Tables[0] : new DataTable();
-        }, procedure);
+    {
+        return ExecuteSafe(() =>
+            ExecuteDataSet(procedure, parameters).Tables[0],
+            procedure);
+    }
 
-    public Task<DataTable> ExecuteDataTableAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
-        => ExecuteSafeAsync(async () =>
+    public async Task<DataTable> ExecuteDataTableAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
+    {
+        return await ExecuteSafeAsync(async () =>
         {
             var ds = await ExecuteDataSetAsync(procedure, parameters);
-            return ds.Tables.Count > 0 ? ds.Tables[0] : new DataTable();
+            return ds.Tables[0];
         }, procedure);
+    }
 
-    // ---------------- COMMAND ----------------
+    // ---------------- BUILD COMMAND ----------------
 
     private IDbCommand BuildCommand(string procedure, IEnumerable<IDbDataParameter> parameters)
     {
         var cmd = _connection.CreateCommand();
         cmd.CommandText = procedure;
         cmd.CommandType = CommandType.StoredProcedure;
-        cmd.Transaction = Tx;
 
-        if (_defaultTimeout.HasValue)
-            cmd.CommandTimeout = _defaultTimeout.Value;
+        if (Tx != null)
+            cmd.Transaction = Tx;
 
         if (parameters != null)
         {
@@ -83,14 +87,16 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     }
 
     private static DbDataAdapter CreateAdapter(IDbCommand cmd)
-        => cmd switch
+    {
+        return cmd switch
         {
             SqlCommand sql => new SqlDataAdapter(sql),
             AseCommand ase => new AseDataAdapter(ase),
             _ => throw new NotSupportedException("Comando no soportado.")
         };
+    }
 
-    // ---------------- SAFE WRAPPERS ----------------
+    // ---------------- SAFE ----------------
 
     private T ExecuteSafe<T>(Func<T> func, string procedure)
     {
@@ -100,9 +106,12 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "StoredProcedure error: {Procedure}", procedure);
+            _logger.Error(ex,
+                "Error SP '{Procedure}'",
+                procedure);
+
             throw new SqlExecutorException(
-                $"Error ejecutando SP '{procedure}'",
+                $"Error SP '{procedure}'",
                 ex,
                 procedure);
         }
@@ -116,7 +125,10 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "StoredProcedure async error: {Procedure}", procedure);
+            _logger.Error(ex,
+                "Error async SP '{Procedure}'",
+                procedure);
+
             throw new SqlExecutorException(
                 $"Error async SP '{procedure}'",
                 ex,
