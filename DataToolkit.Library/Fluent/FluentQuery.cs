@@ -1,190 +1,225 @@
-﻿using DataToolkit.Library.Common;
-using DataToolkit.Library.Sql;
-using System.Text;
+﻿using System.Text;
 
-namespace DataToolkit.Library.Fluent
+namespace DataToolkit.Library.Fluent;
+
+public sealed class FluentQuery : IFluentQuery
 {
-    public sealed class FluentQuery : IFluentQuery
+    private readonly List<string> _select = new();
+    private readonly List<string> _from = new();
+    private readonly List<string> _joins = new();
+
+    private readonly List<WhereClause> _where = new();
+    private readonly List<string> _groupBy = new();
+    private readonly List<string> _orderBy = new();
+
+    private readonly Dictionary<string, object?> _parameters =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private bool _built;
+    private string? _cachedSql;
+
+    // ---------------------------
+    // SELECT / FROM
+    // ---------------------------
+    public IFluentQuery Select(params string[] columns)
     {
-        private readonly ISqlExecutor _executor;
-        private readonly StringBuilder _sql = new();
-        private object? _params;
-        private int? _timeout;
+        EnsureNotBuilt();
 
-        private bool _hasWhere;
+        foreach (var c in columns)
+            if (!_select.Contains(c))
+                _select.Add(c);
 
-        public FluentQuery(ISqlExecutor executor)
+        return this;
+    }
+
+    public IFluentQuery From(string table)
+    {
+        EnsureNotBuilt();
+
+        if (string.IsNullOrWhiteSpace(table))
+            throw new ArgumentException("FROM table cannot be empty.");
+
+        _from.Add(table);
+        return this;
+    }
+
+    // ---------------------------
+    // JOINS
+    // ---------------------------
+    public IFluentQuery InnerJoin(string table, string on)
+        => AddJoin($"INNER JOIN {table} ON {on}");
+
+    public IFluentQuery LeftJoin(string table, string on)
+        => AddJoin($"LEFT JOIN {table} ON {on}");
+
+    public IFluentQuery RightJoin(string table, string on)
+        => AddJoin($"RIGHT JOIN {table} ON {on}");
+
+    public IFluentQuery FullJoin(string table, string on)
+        => AddJoin($"FULL JOIN {table} ON {on}");
+
+    private IFluentQuery AddJoin(string join)
+    {
+        EnsureNotBuilt();
+
+        if (string.IsNullOrWhiteSpace(join))
+            throw new ArgumentException("JOIN cannot be empty.");
+
+        _joins.Add(join);
+        return this;
+    }
+
+    // ---------------------------
+    // WHERE
+    // ---------------------------
+    public IFluentQuery Where(string condition, object? parameters = null)
+        => AddWhere("AND", condition, parameters);
+
+    public IFluentQuery WhereIf(bool condition, string sqlCondition, object? parameters = null)
+        => condition ? Where(sqlCondition, parameters) : this;
+
+    public IFluentQuery And(string condition, object? parameters = null)
+        => AddWhere("AND", condition, parameters);
+
+    public IFluentQuery Or(string condition, object? parameters = null)
+        => AddWhere("OR", condition, parameters);
+
+    private IFluentQuery AddWhere(string op, string condition, object? parameters)
+    {
+        EnsureNotBuilt();
+
+        if (string.IsNullOrWhiteSpace(condition))
+            throw new ArgumentException("WHERE condition cannot be empty.");
+
+        MergeParameters(parameters);
+
+        _where.Add(new WhereClause(op, condition));
+        return this;
+    }
+
+    // ---------------------------
+    // GROUP / ORDER
+    // ---------------------------
+    public IFluentQuery GroupBy(params string[] columns)
+    {
+        EnsureNotBuilt();
+        _groupBy.AddRange(columns.Distinct());
+        return this;
+    }
+
+    public IFluentQuery OrderBy(params string[] columns)
+    {
+        EnsureNotBuilt();
+        _orderBy.AddRange(columns.Distinct());
+        return this;
+    }
+
+    // ---------------------------
+    // BUILD
+    // ---------------------------
+    public (string Sql, object Parameters) Build()
+    {
+        if (_built)
+            return (_cachedSql!, _parameters);
+
+        Validate();
+
+        _cachedSql = BuildSql();
+        _built = true;
+
+        return (_cachedSql, _parameters);
+    }
+
+    public string ToSql() => Build().Sql;
+
+    // ---------------------------
+    // CORE BUILDER
+    // ---------------------------
+    private string BuildSql()
+    {
+        var sql = new StringBuilder(256);
+
+        sql.Append("SELECT ")
+           .Append(_select.Count > 0 ? string.Join(", ", _select) : "*")
+           .Append(' ');
+
+        sql.Append("FROM ")
+           .Append(string.Join(", ", _from))
+           .Append(' ');
+
+        if (_joins.Count > 0)
+            sql.Append(string.Join(" ", _joins)).Append(' ');
+
+        BuildWhere(sql);
+
+        if (_groupBy.Count > 0)
+            sql.Append("GROUP BY ")
+               .Append(string.Join(", ", _groupBy))
+               .Append(' ');
+
+        if (_orderBy.Count > 0)
+            sql.Append("ORDER BY ")
+               .Append(string.Join(", ", _orderBy))
+               .Append(' ');
+
+        return sql.ToString().Trim();
+    }
+
+    // ---------------------------
+    // WHERE BUILDER (SIMPLIFIED BUT SAFE)
+    // ---------------------------
+    private void BuildWhere(StringBuilder sql)
+    {
+        if (_where.Count == 0) return;
+
+        sql.Append("WHERE ");
+
+        for (int i = 0; i < _where.Count; i++)
         {
-            _executor = executor;
+            var w = _where[i];
+
+            if (i > 0)
+                sql.Append(' ').Append(w.Op).Append(' ');
+
+            sql.Append('(').Append(w.Condition).Append(')');
         }
 
-        // ------------------------------------------------------
-        // SELECT / FROM
-        // ------------------------------------------------------
-        public IFluentQuery Select(params string[] columns)
-        {
-            _sql.Append("SELECT ")
-                .Append(string.Join(", ", columns))
-                .Append(" ");
-            return this;
-        }
+        sql.Append(' ');
+    }
 
-        public IFluentQuery From(string table)
-        {
-            _sql.Append("FROM ")
-                .Append(table)
-                .Append(" ");
-            return this;
-        }
+    // ---------------------------
+    // VALIDATION (LIGHT ENTERPRISE)
+    // ---------------------------
+    private void Validate()
+    {
+        if (_from.Count == 0)
+            throw new InvalidOperationException("FROM clause is required.");
+    }
 
-        // ------------------------------------------------------
-        // JOINS
-        // ------------------------------------------------------
-        public IFluentQuery InnerJoin(string table, string on)
-        {
-            _sql.Append("INNER JOIN ")
-                .Append(table)
-                .Append(" ON ")
-                .Append(on)
-                .Append(" ");
-            return this;
-        }
+    // ---------------------------
+    // PARAMETERS
+    // ---------------------------
+    private void MergeParameters(object? parameters)
+    {
+        if (parameters is null) return;
 
-        public IFluentQuery LeftJoin(string table, string on)
+        foreach (var prop in parameters.GetType().GetProperties())
         {
-            _sql.Append("LEFT JOIN ")
-                .Append(table)
-                .Append(" ON ")
-                .Append(on)
-                .Append(" ");
-            return this;
-        }
-
-        public IFluentQuery RightJoin(string table, string on)
-        {
-            _sql.Append("RIGHT JOIN ")
-                .Append(table)
-                .Append(" ON ")
-                .Append(on)
-                .Append(" ");
-            return this;
-        }
-
-        public IFluentQuery FullJoin(string table, string on)
-        {
-            _sql.Append("FULL JOIN ")
-                .Append(table)
-                .Append(" ON ")
-                .Append(on)
-                .Append(" ");
-            return this;
-        }
-
-        // ------------------------------------------------------
-        // WHERE / AND / OR
-        // ------------------------------------------------------
-        public IFluentQuery Where(string condition)
-        {
-            _sql.Append("WHERE ")
-                .Append(condition)
-                .Append(" ");
-            _hasWhere = true;
-            return this;
-        }
-
-        /// <summary>
-        /// Aplica un filtro condicionalmente
-        /// </summary>
-        public IFluentQuery WhereIf(bool condition, string sqlCondition)
-        {
-            if (condition)
-            {
-                if (_hasWhere)
-                    _sql.Append("AND ");
-                else
-                    _sql.Append("WHERE ");
-
-                _sql.Append(sqlCondition).Append(" ");
-                _hasWhere = true;
-            }
-            return this;
-        }
-
-        public IFluentQuery And(string condition)
-        {
-            _sql.Append(_hasWhere ? "AND " : "WHERE ")
-                .Append(condition)
-                .Append(" ");
-            _hasWhere = true;
-            return this;
-        }
-
-        public IFluentQuery Or(string condition)
-        {
-            _sql.Append("OR ")
-                .Append(condition)
-                .Append(" ");
-            return this;
-        }
-
-        // ------------------------------------------------------
-        // GROUP BY / ORDER BY
-        // ------------------------------------------------------
-        public IFluentQuery GroupBy(params string[] columns)
-        {
-            _sql.Append("GROUP BY ")
-                .Append(string.Join(", ", columns))
-                .Append(" ");
-            return this;
-        }
-
-        public IFluentQuery OrderBy(params string[] columns)
-        {
-            _sql.Append("ORDER BY ")
-                .Append(string.Join(", ", columns))
-                .Append(" ");
-            return this;
-        }
-
-        // ------------------------------------------------------
-        // PARAMS / TIMEOUT
-        // ------------------------------------------------------
-        public IFluentQuery Params(object parameters)
-        {
-            _params = parameters;
-            return this;
-        }
-
-        public IFluentQuery Timeout(int seconds)
-        {
-            _timeout = seconds;
-            return this;
-        }
-
-        // ------------------------------------------------------
-        // Devolver el SQl, para ejecuciones multimap
-        // ------------------------------------------------------
-        public string ToSql()
-        {
-            return _sql.ToString();
-        }
-
-        // ------------------------------------------------------
-        // EXECUTION STRATEGIES
-        // ------------------------------------------------------
-        public Task<IEnumerable<T>> ExecuteAsync<T>()
-        {
-            return _executor.FromSqlAsync<T>(_sql.ToString(), _params, _timeout);
-        }
-
-        public Task<IEnumerable<T>> ExecuteMultiMapAsync<T>(MultiMapRequest request)
-        {
-            return _executor.FromSqlMultiMapAsync<T>(request);
-        }
-
-        public Task<List<IEnumerable<dynamic>>> ExecuteMultipleAsync()
-        {
-            return _executor.QueryMultipleAsync(_sql.ToString(), _params);
+            _parameters.TryAdd(prop.Name, prop.GetValue(parameters));
         }
     }
+
+    // ---------------------------
+    // STATE
+    // ---------------------------
+    private void EnsureNotBuilt()
+    {
+        if (_built)
+            throw new InvalidOperationException("Query already built and frozen.");
+    }
+
+    // ---------------------------
+    // INTERNAL MODEL
+    // ---------------------------
+    private sealed record WhereClause(string Op, string Condition);
 }
