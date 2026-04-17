@@ -41,38 +41,31 @@ public sealed class FluentQuery : IFluentQuery
     }
 
     // ---------------- JOIN ----------------
-    public IFluentQuery Join(string sql)
+    public IFluentQuery InnerJoin(string table, Expression<Func<bool>> on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin(sql));
+        _nodes.Add(new SqlJoin(JoinType.Inner, table, ExpressionParser.Parse(on.Body)));
         return this;
     }
 
-    public IFluentQuery InnerJoin(string table, string on)
+    public IFluentQuery LeftJoin(string table, Expression<Func<bool>> on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"INNER JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin(JoinType.Left, table, ExpressionParser.Parse(on.Body)));
         return this;
     }
 
-    public IFluentQuery LeftJoin(string table, string on)
+    public IFluentQuery RightJoin(string table, Expression<Func<bool>> on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"LEFT JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin(JoinType.Right, table, ExpressionParser.Parse(on.Body)));
         return this;
     }
 
-    public IFluentQuery RightJoin(string table, string on)
+    public IFluentQuery FullJoin(string table, Expression<Func<bool>> on)
     {
         EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"RIGHT JOIN {table} ON {on}"));
-        return this;
-    }
-
-    public IFluentQuery FullJoin(string table, string on)
-    {
-        EnsureNotBuilt();
-        _nodes.Add(new SqlJoin($"FULL JOIN {table} ON {on}"));
+        _nodes.Add(new SqlJoin(JoinType.Full, table, ExpressionParser.Parse(on.Body)));
         return this;
     }
 
@@ -104,11 +97,7 @@ public sealed class FluentQuery : IFluentQuery
         if (!condition)
             return this;
 
-        Merge(parameters);
-
-        _nodes.Add(new SqlRaw(sql));
-
-        return this;
+        return Where(sql, parameters);
     }
 
     // ---------------- GROUP BY ----------------

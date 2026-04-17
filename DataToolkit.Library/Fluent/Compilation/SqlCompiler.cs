@@ -32,8 +32,20 @@ internal sealed class SqlCompiler
                 sb.Append(string.Join(", ", f.Tables));
                 break;
 
+            // 🔥 FIX PRINCIPAL: JOIN estructurado
             case SqlJoin j:
-                sb.Append(j.Sql);
+                sb.Append(j.Type switch
+                {
+                    JoinType.Inner => "INNER JOIN ",
+                    JoinType.Left => "LEFT JOIN ",
+                    JoinType.Right => "RIGHT JOIN ",
+                    JoinType.Full => "FULL JOIN ",
+                    _ => throw new NotSupportedException()
+                });
+
+                sb.Append(j.Table);
+                sb.Append(" ON ");
+                Render(sb, j.On);
                 break;
 
             case SqlRaw r:

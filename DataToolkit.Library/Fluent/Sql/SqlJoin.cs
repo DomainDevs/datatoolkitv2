@@ -1,3 +1,15 @@
 ﻿namespace DataToolkit.Library.Fluent.Sql;
 
-public sealed record SqlJoin(string Sql) : SqlNode;
+public enum JoinType
+{
+    Inner,
+    Left,
+    Right,
+    Full
+}
+
+public sealed record SqlJoin(
+    JoinType Type,
+    string Table,
+    SqlNode On
+) : SqlNode;
