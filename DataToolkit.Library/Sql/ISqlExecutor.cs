@@ -7,7 +7,6 @@ namespace DataToolkit.Library.Sql
     public interface ISqlExecutor
     {
         void Dispose();
-        ValueTask DisposeAsync();
         int Execute(string sql);
         int Execute(string sql, object? parameters = null, int? commandTimeout = null);
         int Execute(string sql, object? parameters);
@@ -16,7 +15,6 @@ namespace DataToolkit.Library.Sql
         Task<int> ExecuteAsync(string sql, object? parameters);
         (int RowsAffected, Dictionary<string, object> OutputValues) ExecuteWithOutput(string storedProcedure, Action<DynamicParameters> configureParameters);
         (int RowsAffected, Dictionary<string, object> OutputValues) ExecuteWithOutput(string storedProcedure, Action<DynamicParameters> configureParameters, int? commandTimeout = null);
-        Task<(int RowsAffected, DynamicParameters Output)> ExecuteWithOutputAsync(string storedProcedure, Action<DynamicParameters> configureParameters);
         Task<(int RowsAffected, DynamicParameters Output)> ExecuteWithOutputAsync(string storedProcedure, Action<DynamicParameters> configureParameters, int? commandTimeout = null);
         IEnumerable<T> FromSql<T>(string sql);
         IEnumerable<T> FromSql<T>(string sql, object? parameters = null, int? commandTimeout = null);
@@ -26,15 +24,10 @@ namespace DataToolkit.Library.Sql
         Task<IEnumerable<T>> FromSqlAsync<T>(string sql, object? parameters);
         IEnumerable<T> FromSqlInterpolated<T>(FormattableString query);
         IEnumerable<T> FromSqlInterpolated<T>(FormattableString query, int? commandTimeout = null);
-        Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query);
         Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query, int? commandTimeout = null, CancellationToken ct = default);
         IEnumerable<T> FromSqlMultiMap<T>(MultiMapRequest request);
         IEnumerable<T> FromSqlMultiMap<T>(MultiMapRequest request, int? commandTimeout = null);
-        Task<IEnumerable<T>> FromSqlMultiMapAsync<T>(MultiMapRequest request);
         Task<IEnumerable<T>> FromSqlMultiMapAsync<T>(MultiMapRequest request, int? commandTimeout = null);
-        Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql);
         Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql, object? parameters = null, CommandType commandType = CommandType.StoredProcedure, int? commandTimeout = null);
-        Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql, object? parameters);
-        Task<List<IEnumerable<dynamic>>> QueryMultipleAsync(string sql, object? parameters, CommandType commandType);
     }
 }
