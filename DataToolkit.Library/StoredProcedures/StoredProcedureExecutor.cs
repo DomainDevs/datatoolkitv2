@@ -16,22 +16,6 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
 
     private bool _disposed;
 
-    // ---------------- CONSTRUCTOR LEGACY (COMPATIBLE) ----------------
-    public StoredProcedureExecutor(
-        IDbConnection connection,
-        IDbTransaction? transaction = null,
-        int? defaultTimeout = null,
-        ILogger? logger = null)
-    {
-        _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-
-        _transactionProvider = () => transaction;
-
-        _defaultTimeout = defaultTimeout;
-        _logger = logger ?? Log.Logger;
-    }
-
-    // ---------------- CONSTRUCTOR MODERNO (RECOMENDADO) ----------------
     public StoredProcedureExecutor(
         IDbConnection connection,
         Func<IDbTransaction?> transactionProvider,
@@ -39,93 +23,55 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
         ILogger? logger = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-
         _transactionProvider = transactionProvider ?? (() => null);
-
         _defaultTimeout = defaultTimeout;
         _logger = logger ?? Log.Logger;
     }
 
-    // =========================================================
-    // CORE
-    // =========================================================
-
     private IDbTransaction? Tx => _transactionProvider();
 
-    private void Validate(string procedure)
-    {
-        if (string.IsNullOrWhiteSpace(procedure))
-            throw new ArgumentException("Procedure cannot be null or empty.");
-    }
-
-    // =========================================================
-    // DATASET
-    // =========================================================
+    // ---------------- CORE ----------------
 
     public DataSet ExecuteDataSet(string procedure, IEnumerable<IDbDataParameter> parameters)
-    {
-        return ExecuteSafe(() =>
+        => ExecuteSafe(() =>
         {
             using var cmd = BuildCommand(procedure, parameters);
             var ds = new DataSet();
-
             var adapter = CreateAdapter(cmd);
             adapter.Fill(ds);
-
             return ds;
         }, procedure);
-    }
 
     public Task<DataSet> ExecuteDataSetAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
-    {
-        return ExecuteSafeAsync(() =>
+        => ExecuteSafeAsync(() =>
             Task.Run(() => ExecuteDataSet(procedure, parameters)),
             procedure);
-    }
-
-    // =========================================================
-    // DATATABLE
-    // =========================================================
 
     public DataTable ExecuteDataTable(string procedure, IEnumerable<IDbDataParameter> parameters)
-    {
-        return ExecuteSafe(() =>
+        => ExecuteSafe(() =>
         {
             var ds = ExecuteDataSet(procedure, parameters);
-
-            if (ds.Tables.Count == 0)
-                return new DataTable();
-
-            return ds.Tables[0];
+            return ds.Tables.Count > 0 ? ds.Tables[0] : new DataTable();
         }, procedure);
-    }
 
-    public async Task<DataTable> ExecuteDataTableAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
-    {
-        return await ExecuteSafeAsync(async () =>
+    public Task<DataTable> ExecuteDataTableAsync(string procedure, IEnumerable<IDbDataParameter> parameters)
+        => ExecuteSafeAsync(async () =>
         {
             var ds = await ExecuteDataSetAsync(procedure, parameters);
-
-            return ds.Tables.Count > 0
-                ? ds.Tables[0]
-                : new DataTable();
+            return ds.Tables.Count > 0 ? ds.Tables[0] : new DataTable();
         }, procedure);
-    }
 
-    // =========================================================
-    // COMMAND BUILDER
-    // =========================================================
+    // ---------------- COMMAND ----------------
 
     private IDbCommand BuildCommand(string procedure, IEnumerable<IDbDataParameter> parameters)
     {
-        Validate(procedure);
-
         var cmd = _connection.CreateCommand();
         cmd.CommandText = procedure;
         cmd.CommandType = CommandType.StoredProcedure;
+        cmd.Transaction = Tx;
 
-        if (Tx != null)
-            cmd.Transaction = Tx;
+        if (_defaultTimeout.HasValue)
+            cmd.CommandTimeout = _defaultTimeout.Value;
 
         if (parameters != null)
         {
@@ -137,34 +83,26 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     }
 
     private static DbDataAdapter CreateAdapter(IDbCommand cmd)
-    {
-        return cmd switch
+        => cmd switch
         {
             SqlCommand sql => new SqlDataAdapter(sql),
             AseCommand ase => new AseDataAdapter(ase),
-            _ => throw new NotSupportedException("Unsupported command type.")
+            _ => throw new NotSupportedException("Comando no soportado.")
         };
-    }
 
-    // =========================================================
-    // SAFE WRAPPERS
-    // =========================================================
+    // ---------------- SAFE WRAPPERS ----------------
 
     private T ExecuteSafe<T>(Func<T> func, string procedure)
     {
         try
         {
-            Validate(procedure);
             return func();
         }
         catch (Exception ex)
         {
-            _logger.Error(ex,
-                "StoredProcedure execution error: {Procedure}",
-                procedure);
-
+            _logger.Error(ex, "StoredProcedure error: {Procedure}", procedure);
             throw new SqlExecutorException(
-                $"Error executing stored procedure '{procedure}'",
+                $"Error ejecutando SP '{procedure}'",
                 ex,
                 procedure);
         }
@@ -174,32 +112,23 @@ public class StoredProcedureExecutor : IStoredProcedureExecutor, IDisposable
     {
         try
         {
-            Validate(procedure);
             return await func();
         }
         catch (Exception ex)
         {
-            _logger.Error(ex,
-                "StoredProcedure async execution error: {Procedure}",
-                procedure);
-
+            _logger.Error(ex, "StoredProcedure async error: {Procedure}", procedure);
             throw new SqlExecutorException(
-                $"Async error executing stored procedure '{procedure}'",
+                $"Error async SP '{procedure}'",
                 ex,
                 procedure);
         }
     }
 
-    // =========================================================
-    // DISPOSE (IMPORTANTE: NO ROMPER UNIT OF WORK)
-    // =========================================================
+    // ---------------- DISPOSE ----------------
 
     public void Dispose()
     {
         if (_disposed) return;
-
-        // ⚠️ SOLO liberar si este executor es dueño (no en UoW normalmente)
-        // En UnitOfWork la connection se libera ahí, no aquí
 
         _disposed = true;
         GC.SuppressFinalize(this);

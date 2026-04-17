@@ -145,7 +145,7 @@ public class UnitOfWork : IUnitOfWork, IDbContext, IDisposable
     private void BuildExecutors()
     {
         Sql = new SqlExecutor(_connection, () => _transaction);
-        StoredProcedureExecutor = new StoredProcedureExecutor(_connection, _transaction);
+        StoredProcedureExecutor = new StoredProcedureExecutor(_connection, () => _transaction);
         Fluent = new FluentQuery();
     }
 
