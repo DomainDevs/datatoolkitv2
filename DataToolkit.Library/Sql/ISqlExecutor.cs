@@ -7,6 +7,7 @@ namespace DataToolkit.Library.Sql
     public interface ISqlExecutor
     {
         void Dispose();
+        ValueTask DisposeAsync();
         int Execute(string sql);
         int Execute(string sql, object? parameters = null, int? commandTimeout = null);
         int Execute(string sql, object? parameters);
@@ -26,7 +27,7 @@ namespace DataToolkit.Library.Sql
         IEnumerable<T> FromSqlInterpolated<T>(FormattableString query);
         IEnumerable<T> FromSqlInterpolated<T>(FormattableString query, int? commandTimeout = null);
         Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query);
-        Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query, int? commandTimeout = null);
+        Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query, int? commandTimeout = null, CancellationToken ct = default);
         IEnumerable<T> FromSqlMultiMap<T>(MultiMapRequest request);
         IEnumerable<T> FromSqlMultiMap<T>(MultiMapRequest request, int? commandTimeout = null);
         Task<IEnumerable<T>> FromSqlMultiMapAsync<T>(MultiMapRequest request);

@@ -48,10 +48,11 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     /// <param name="commandTimeout">Tiempo máximo en segundos para ejecutar el comando (opcional)</param>
     public SqlExecutor(IDbConnection connection, IDbTransaction? transaction = null, int? commandTimeout = null, ILogger logger = null)
     {
-        _connection = connection;
+        _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _transaction = transaction;
         _defaultTimeout = commandTimeout;
-        _logger = logger ?? new LoggerConfiguration().CreateLogger(); //_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        // Usa el logger global si no se inyecta uno específico
+        _logger = logger ?? Log.Logger;
     }
 
     // ---------------------------------------------------------------------------
@@ -78,12 +79,21 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     public Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query)
     => FromSqlInterpolatedAsync<T>(query, null);
 
-    public async Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(FormattableString query, int? commandTimeout = null)
+    public async Task<IEnumerable<T>> FromSqlInterpolatedAsync<T>(
+        FormattableString query,
+        int? commandTimeout = null,
+        CancellationToken ct = default) // <--- Agregado
     {
-        //var (sql, parameters) = BuildInterpolatedSql(query);
-        //return await _connection.QueryAsync<T>(sql, parameters, _transaction);
         var (sql, parameters) = BuildInterpolatedSql(query);
-        return await ExecuteSafeAsync(() => _connection.QueryAsync<T>(sql, parameters, _transaction, commandTimeout: commandTimeout ?? _defaultTimeout), sql);
+
+        return await ExecuteSafeAsync(async () =>
+            await _connection.QueryAsync<T>(new CommandDefinition(
+                sql,
+                parameters,
+                _transaction,
+                commandTimeout ?? _defaultTimeout,
+                cancellationToken: ct)), // <--- Dapper lo agradece
+            sql);
     }
     #endregion
 
@@ -315,6 +325,12 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     }
     #endregion
 
+
+    private static void ValidateSql(string sql)
+    {
+        if (string.IsNullOrWhiteSpace(sql))
+            throw new ArgumentException("SQL cannot be null or empty.");
+    }
     // ---------------------------------------------------------------------------
     // MÉTODO AUXILIAR PARA INTERPOLACIÓN SEGURA
     // ---------------------------------------------------------------------------
@@ -324,14 +340,17 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     private static (string, DynamicParameters) BuildInterpolatedSql(FormattableString query)
     {
         var dParams = new DynamicParameters();
-        var sql = query.Format;
+        // Creamos un array de nombres de parámetros [@p0, @p1, ...]
+        var paramNames = new object[query.ArgumentCount];
 
         for (int i = 0; i < query.ArgumentCount; i++)
         {
-            var paramName = $"@p{i}";
-            sql = sql.Replace("{" + i + "}", paramName);
-            dParams.Add(paramName, query.GetArgument(i));
+            paramNames[i] = $"@p{i}";
+            dParams.Add((string)paramNames[i], query.GetArgument(i));
         }
+
+        // string.Format se encarga de reemplazar {0}, {1} etc de forma nativa
+        var sql = string.Format(query.Format, paramNames);
 
         return (sql, dParams);
     }
@@ -339,46 +358,60 @@ public class SqlExecutor : IDisposable, ISqlExecutor
     // ---------------------------------------------------------------------------
     // IMPLEMENTACIÓN IDisposable
     // ---------------------------------------------------------------------------
+    // --- Implementación Pro de Disposición ---
     public void Dispose()
     {
-        if (!_disposed)
-        {
-            _connection?.Dispose();
-            _disposed = true;
-        }
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connection is IAsyncDisposable ad) await ad.DisposeAsync();
+        else _connection?.Dispose();
+
+        _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing) _connection?.Dispose();
+        _disposed = true;
     }
 
     // ---------------------------------------------------------------------------
     // Agrega un método wrapper centralizado en SqlExecutor
     // ---------------------------------------------------------------------------
-    private T ExecuteSafe<T>(Func<T> func, string? sql = null)
+    private T ExecuteSafe<T>(Func<T> func, string sql)
     {
         try
         {
+            ValidateSql(sql);
             return func();
         }
         catch (Exception ex)
         {
-            ////throw new SqlExecutorException("Error al ejecutar SQL", ex, sql);
-            _logger.Error(ex, "Error al ejecutar el procedimiento almacenado '{Procedure}'", sql);
-            throw new SqlExecutorException($"Error al ejecutar procedimiento '{sql}'", ex, sql);
+            _logger.Error(ex, "SQL execution error: {Sql}", sql);
+            throw new SqlExecutorException(sql, ex);
         }
     }
 
     /// <summary>
     /// Método protegido para liberar recursos de forma segura, asíncrono.
     /// </summary>
-    private async Task<T> ExecuteSafeAsync<T>(Func<Task<T>> func, string? sql = null)
+    private async Task<T> ExecuteSafeAsync<T>(Func<Task<T>> func, string sql)
     {
         try
         {
+            ValidateSql(sql);
             return await func();
         }
         catch (Exception ex)
         {
-            //throw new SqlExecutorException("Error al ejecutar SQL asincrónico", ex, sql);
-            _logger.Error(ex, "Error asincrónico al ejecutar el procedimiento almacenado '{Procedure}'", sql);
-            throw new SqlExecutorException($"Error asincrónico al ejecutar procedimiento '{sql}'", ex, sql);
+            _logger.Error(ex, "SQL async execution error: {Sql}", sql);
+            throw new SqlExecutorException(sql, ex);
         }
     }
 
