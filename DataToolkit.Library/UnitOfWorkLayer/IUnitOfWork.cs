@@ -19,8 +19,4 @@ public interface IUnitOfWork : IDisposable
     void BeginTransaction();
     void Commit();
     void Rollback();
-
-    // Gestión de Transacciones (Asincrónico)
-    Task CommitAsync();
-    Task RollbackAsync();
 }

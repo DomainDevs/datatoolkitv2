@@ -172,18 +172,7 @@ public class UnitOfWork : IUnitOfWork, IDbContext, IDisposable
     }
 
     // ---------------- ASYNC WRAPPERS ----------------
-    public Task CommitAsync()
-    {
-        Commit();
-        return Task.CompletedTask;
-    }
-
-    public Task RollbackAsync()
-    {
-        Rollback();
-        return Task.CompletedTask;
-    }
-
+    //no existe
     // ---------------- DISPOSE ----------------
     public void Dispose()
     {
