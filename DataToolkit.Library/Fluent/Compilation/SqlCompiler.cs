@@ -9,64 +9,66 @@ internal sealed class SqlCompiler
     {
         var sb = new StringBuilder();
 
-        // SELECT
-        foreach (var n in q.Nodes)
-            if (n is SqlSelect s)
-            {
-                sb.Append("SELECT ");
-                sb.Append(s.Columns.Count == 0 ? "*" : string.Join(", ", s.Columns));
-                sb.Append(' ');
-            }
+        // ---------------- SELECT ----------------
+        var select = q.Nodes.OfType<SqlSelect>().FirstOrDefault();
+        sb.Append("SELECT ");
+        sb.Append(select is null || select.Columns.Count == 0
+            ? "*"
+            : string.Join(", ", select.Columns));
+        sb.AppendLine();
 
-        // FROM
-        foreach (var n in q.Nodes)
-            if (n is SqlFrom f)
-            {
-                sb.Append("FROM ");
-                sb.Append(string.Join(", ", f.Tables));
-                sb.Append(' ');
-            }
+        // ---------------- FROM ----------------
+        var from = q.Nodes.OfType<SqlFrom>().FirstOrDefault();
+        sb.Append("FROM ");
+        sb.Append(from is null
+            ? ""
+            : string.Join(", ", from.Tables));
+        sb.AppendLine();
 
-        // JOIN
-        foreach (var n in q.Nodes)
-            if (n is SqlJoin j)
-            {
-                sb.Append(j.Sql);
-                sb.Append(' ');
-            }
+        // ---------------- JOIN ----------------
+        foreach (var join in q.Nodes.OfType<SqlJoin>())
+        {
+            sb.AppendLine(join.Sql);
+        }
 
-        // WHERE (SEPARADO Y CORRECTO)
-        if (q.WhereNodes.Count > 0)
+        // ---------------- WHERE ----------------
+        var whereNodes = q.Nodes
+            .Where(n => n is SqlRaw || n is SqlBinary)
+            .ToList();
+
+        if (whereNodes.Count > 0)
         {
             sb.Append("WHERE ");
 
-            for (int i = 0; i < q.WhereNodes.Count; i++)
+            for (int i = 0; i < whereNodes.Count; i++)
             {
                 if (i > 0)
                     sb.Append(" AND ");
 
-                Render(sb, q.WhereNodes[i]);
+                Render(sb, whereNodes[i]);
             }
 
-            sb.Append(' ');
+            sb.AppendLine();
         }
 
-        // GROUP BY
-        foreach (var n in q.Nodes)
-            if (n is SqlGroupBy gb)
-            {
-                sb.Append("GROUP BY ");
-                sb.Append(string.Join(", ", gb.Columns));
-                sb.Append(' ');
-            }
+        // ---------------- GROUP BY ----------------
+        var groupBy = q.Nodes.OfType<SqlGroupBy>().FirstOrDefault();
 
-        // ORDER BY
-        foreach (var n in q.Nodes)
-            if (n is SqlOrderBy ob)
-            {
-                sb.Append("ORDER BY ");
-                sb.Append(string.Join(", ", ob.Columns));
-            }
+        if (groupBy is not null && groupBy.Columns.Count > 0)
+        {
+            sb.Append("GROUP BY ");
+            sb.Append(string.Join(", ", groupBy.Columns));
+            sb.AppendLine();
+        }
+
+        // ---------------- ORDER BY ----------------
+        var orderBy = q.Nodes.OfType<SqlOrderBy>().FirstOrDefault();
+
+        if (orderBy is not null && orderBy.Columns.Count > 0)
+        {
+            sb.Append("ORDER BY ");
+            sb.Append(string.Join(", ", orderBy.Columns));
+        }
 
         return sb.ToString().Trim();
     }
